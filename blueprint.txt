@@ -1,0 +1,223 @@
+Absolutely bro ✅ Let’s lock everything first. Here’s the full, final RideShare project overview based on all our discussions:
+
+
+---
+
+🚗 RideShare – MCA Project Overview
+
+1. Project Goal
+
+RideShare is a web-based carpooling platform designed to improve daily commutes by connecting drivers and passengers traveling along similar routes. The platform ensures efficiency, cost-effectiveness, and safety, while keeping it practical for a college project.
+
+
+---
+
+2. User Roles
+
+A. Driver
+
+* Signup → email OTP verification → admin approval → can post rides.
+
+* Fields: Name, Email, Password, Age, Phone, Gender, License Number, Profile Pic (optional),otp verification,admin verification.
+
+* Ride Posting: Pickup address, Drop address, Date & Time, Seats Available, Distance (auto-calculated), Amount per seat (auto-calculated).
+
+* Actions: Edit/cancel rides before ride start, view booked passengers, see ride history, get notifications when passengers book/cancel seats.
+
+
+B. Passenger
+
+* Signup → email OTP verification → can login immediately (no admin approval).
+
+* Fields: Name, Email, Password, Age, Phone, Gender, Profile Pic (optional),email verification.
+
+* Booking: Can book 1 or more seats (up to available seats). Amount calculated automatically. Can cancel only before 1 hour of ride start.
+
+* Actions: See rides list with search & filter, book rides, cancel rides, chat with driver after booking, view ride history, rate & review driver after completion.
+
+
+C. Admin
+
+* Login only (manual creation in DB).
+
+* Manage user approvals (drivers only), view all users, rides, bookings, SOS alerts.
+
+* Search functionality for users & rides.
+
+* Can view ratings & reviews for monitoring.
+
+* Admin dashboard (optional) with summary stats: total users, total rides, total bookings, pending approvals, SOS alerts.
+
+
+
+---
+
+3. Core Features
+
+1. Authentication
+
+
+
+* Signup with email OTP.
+
+* Driver → needs admin approval before login.
+
+* Passenger → login immediately after OTP verification.
+
+
+2. Ride Posting & Booking
+
+
+
+* Driver posts ride with exact pickup/drop addresses.
+
+* System calculates distance via Google Maps/OpenStreetMap API.
+
+* Amount = fixed per seat × distance.
+
+* Passenger books seats → seat count decreases automatically.
+
+* Cancellations → seat count restored, email notifications sent.
+
+
+3. Chat System
+
+
+
+* Text-only chat between booked passengers & driver.
+
+
+4. Notifications
+
+
+
+* Email notifications for:
+
+* Booking confirmation
+
+* Passenger cancels ride
+
+* Driver edits/cancels ride
+
+* Refund messages (fake)
+
+
+
+5. Ride Status & History
+
+
+
+* Ride automatically marked completed after date/time passes.
+
+* Drivers & passengers can see ride history (upcoming, completed, cancelled).
+
+
+6. Ratings & Reviews
+
+
+
+* After ride completion, passenger rates driver (1–5 stars + optional text).
+
+* Driver can rate passenger similarly.
+
+* Admin can view all ratings & reviews.
+
+
+7. SOS Feature
+
+
+
+* Red SOS button inside ride page → sends alert to admin.
+
+* Admin can contact user via phone/email.
+
+
+8. Search & Filter
+
+
+
+* Passengers can search rides by pickup/drop location.
+
+* Filter by date, seats available, amount range.
+
+
+9. Profile Management
+
+
+
+* Users can view/edit personal info (name, phone, profile pic, password).
+
+
+
+---
+
+4. Database Tables (Planned)
+
+* Users: Drivers & Passengers
+
+* Rides
+
+* Bookings
+
+* Chat messages
+
+* Ratings & Reviews
+
+* SOS Alerts
+
+
+
+---
+
+5. Tech Stack
+
+* Frontend: React.js
+
+* Backend: Node.js + Express
+
+* Database: MongoDB
+
+* Chat: Socket.IO
+
+* Distance Calculation: Google Maps API / OpenStreetMap API
+
+* Emails: Nodemailer (for notifications)
+
+
+
+---
+
+6. Constraints / Simplifications
+
+* No real money transactions → only virtual “Paid” flag.
+
+* Only car rides allowed.
+
+* No real-time ride tracking (map view).
+
+* Ride expiration happens automatically after ride date/time.
+
+
+
+---
+
+7. Timeline (1 week)
+
+Day	Tasks
+
+1–2	Authentication (OTP signup, admin approval, login) + DB setup
+3	Ride posting + distance & amount calculation
+4	Ride search, filters, booking, seat management
+5	Chat system & email notifications
+6	Ratings & reviews + SOS button
+7	Admin panel, profile pages, testing, final polishing
+
+
+
+---
+
+Bro, this is the full project blueprint 🚀.
+
+If you want, we can start coding tomorrow following this exact plan.
+
+Do you want me to make a database schema diagram next before we start coding?

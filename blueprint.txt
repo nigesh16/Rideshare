@@ -1,9 +1,5 @@
-Absolutely bro ✅ Let’s lock everything first. Here’s the full, final RideShare project overview based on all our discussions:
 
-
----
-
-🚗 RideShare – MCA Project Overview
+Project Name :🚗 RideShare (MERN stack, tailwindcss)
 
 1. Project Goal
 
@@ -198,26 +194,3 @@ C. Admin
 * Ride expiration happens automatically after ride date/time.
 
 
-
----
-
-7. Timeline (1 week)
-
-Day	Tasks
-
-1–2	Authentication (OTP signup, admin approval, login) + DB setup
-3	Ride posting + distance & amount calculation
-4	Ride search, filters, booking, seat management
-5	Chat system & email notifications
-6	Ratings & reviews + SOS button
-7	Admin panel, profile pages, testing, final polishing
-
-
-
----
-
-Bro, this is the full project blueprint 🚀.
-
-If you want, we can start coding tomorrow following this exact plan.
-
-Do you want me to make a database schema diagram next before we start coding?

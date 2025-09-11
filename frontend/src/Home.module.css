@@ -1,0 +1,151 @@
+* {
+    box-sizing: border-box;
+}
+
+/* Main body and container styling */
+.homepage-container {
+    font-family: 'Inter', sans-serif;
+    /* background: linear-gradient(to right, #020932, #4444a0); */
+    background: linear-gradient(to right, #031056, #5252c3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 90vh;
+    padding: 2rem;
+    text-align: center;
+}
+
+/* Heading and description styling */
+.main-title {
+    margin-top: 50px;
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 2.5rem;
+    margin-bottom: 0.5rem;
+    color: white; /* Changed color for better visibility on the dark background */
+}
+
+.rideshare-text {
+    color: #2fff75ff;
+}
+
+.main-description {
+    color: #d1d5db; /* A lighter gray for readability */
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    margin-bottom: 3rem;
+    max-width: 48rem;
+}
+
+/* Options container and card styling */
+.options-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    width: 100%;
+    max-width: 48rem; /* Max-width to prevent cards from spreading too wide */
+}
+
+.option-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2.5rem;
+    background-color: #f3f4f6;
+    border-radius: 1rem;
+    border: 1px solid #e5e7eb;
+    text-decoration: none;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    cursor: pointer;
+    width: 320px;
+    height: 140px;
+}
+
+.option-card:hover {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.28);
+    border-radius: 16px;
+}
+
+.card-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #04007f;
+    margin-bottom: 0.5rem;
+}
+
+.card-description {
+    color: #6b728000;
+    text-align: center;
+}
+
+
+/* Responsive styles for larger screens (tablets and desktops) */
+@media (min-width: 768px) {
+    .card-description {
+        color: #6b7280;
+    }
+    .main-title {
+        font-size: 4rem;
+        line-height: 1;
+    }
+    .options-container {
+        flex-direction: row;
+    }
+    .option-card{
+        height: 185px;
+    }
+}
+/* Universal box-sizing for all elements */
+* {
+    box-sizing: border-box;
+}
+
+/* Navigation bar styling */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    background-color: #170e41;
+    /* background: linear-gradient(to right,  #031056, #5252c3); */
+}
+
+.navbar-logo {
+    margin: 20px;
+    height: 100px;
+    transition: all 0.3s ease;
+}
+.navbar-logo:hover {
+    filter: drop-shadow(0 0 2px #13cacd);
+}
+
+.navbar-links {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    margin-right: 25px;
+}
+
+.navbar-link {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    text-decoration: none;
+    color: rgb(255, 255, 255);
+    transition: color 0.2s;
+}
+
+.navbar-link:hover {
+    color: #c1c1c1;
+}
+
+/* Responsive styles */
+@media (max-width: 600px) {
+    .navbar {
+        flex-direction: column;
+        text-align: center;
+        padding-bottom: 7px;
+    }
+}

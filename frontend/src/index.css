@@ -1,4 +1,7 @@
-.Homepage{
+body{
+    margin: 0;
+}
+/* .Homepage{
     background-color: rgb(210, 143, 255);
     height: 100vh;
     width: 100%;
@@ -18,4 +21,4 @@ input{
 }
 button{
     margin-left: 20px;
-}
+} */

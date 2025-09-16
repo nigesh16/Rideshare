@@ -1,11 +1,13 @@
 import { useState } from "react";
 import styles from './Driver.module.css';
 import Countdown from "../../countdown/Countdown";
-
+import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import axios from "axios";
 
 function Driver(){
+    const navigate = useNavigate(); 
+
     const [name,setName] = useState("");
     const [email,setEmail] = useState("");
     const [password,setPassword] = useState("");
@@ -24,7 +26,21 @@ function Driver(){
     function handleToggle(isActive) {
       setIsSignInActive(isActive);
     }
-    // Creating New Account Functions
+    function clearAllFields() {
+      // Signup
+      setName("");
+      setEmail("");
+      setPassword("");
+      setDob("");
+      setGender("");
+      setLicense("");
+      setOtp("");
+
+      // Login
+      setLoginEmail("");
+      setLoginPassword("");
+    }
+    
     async function validation() {
         const trimmedName = name.trim();
         const trimmedEmail = email.trim();
@@ -66,7 +82,7 @@ function Driver(){
 
         //Validate license
         const trimmed = license.trim().toUpperCase();
-        const licensePattern = /^[A-Z]{2}\s?[0-9]{2}\s?[0-9]{4}\s?[0-9]{4,7}$/;;
+        const licensePattern = /^TN\s?\d{2}\s?[A-Z]{1,2}\s?\d{1,7}$/i;
 
         if (!trimmed) {
           return toast.error("License number is required",{containerId:"right"});
@@ -95,6 +111,8 @@ function Driver(){
             return toast.error("Verification is required to proceed",{containerId:"right"});
         if (!otp) 
             return toast.error("Please enter OTP",{containerId:"right"});
+        if (!/^\d+$/.test(otp))
+            return toast.error("OTP must contain only numbers", { containerId: "right" });
         if (otp.length !== 6) 
             return toast.error("OTP must be 6 digits",{containerId:"right"});
         if (!/^\S+$/.test(otp))
@@ -107,15 +125,10 @@ function Driver(){
             name:trimmedName,email:trimmedEmail,password,dob,gender,license,otp: Number(otp)
           })
           if(res.data.success){
-              toast.success("Otp Succesfully Verified!",{containerId:"right"});
-              setVerification(false);
-              setName("");
-              setEmail("");
-              setPassword("");
-              setLicense("");
-              setOtp("");
-              setDob("");
-              setGender("");
+              toast.success("Successfully SignUp!",{containerId:"right"});
+              setTimeout(() => {
+                      window.location.reload();}
+                      , 2000);
           }else
               toast.error("Otp doesn't Match!",{containerId:"right"});
         }
@@ -134,27 +147,32 @@ function Driver(){
           return toast.error("Invalid email format!", { containerId: "left" });
         }
 
-        // Password validation (no trimming!)
+        // Password validation
         if (!loginPassword) {
           return toast.error("Password is required!", { containerId: "left" });
         } else if (loginPassword.length < 6) {
-          return toast.error("Password must be at least 6 characters long!", { containerId: "left" });
+          return toast.error("Invalid password.", { containerId: "left" });
         } else if (/\s/.test(loginPassword)) {
           return toast.error("Password must not contain spaces!", { containerId: "left" });
         }
         //verification
         try{
             const res = await axios.post("http://localhost:3000/d/login",{
-            email:trimmedEmail,password})
+            email:trimmedEmail,password:loginPassword})
             if(!res.data.success){
                 toast.error(res.data.message,{containerId:"left"});
             }
             else{
-                toast.success("Successfully login!",{containerId:"right"});
-            }
+                toast.success("Successfully login!",{containerId:"left"});
+                localStorage.setItem("token", res.data.token);
+                clearAllFields();
+                  setTimeout(() => {
+                    navigate("/driver-home");
+                  }, 1000);
+                }
           }
         catch(err){
-            toast.error("Server busy!",{containerId:"right"});
+            toast.error("Server busy!",{containerId:"left"});
         }
     }
 
@@ -176,7 +194,7 @@ function Driver(){
 
     return (
       // Main wrapper
-      <div className={styles.Passenger}>
+      <div className={styles.Driver}>
         <div className={styles['main-wrapper']}>
           <div className={`${styles.container} ${isSignInActive ? styles.active : ''}`}>
             {/* Sign Up Form */}

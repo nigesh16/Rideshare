@@ -1,7 +1,7 @@
 import { useState } from "react";
 import styles from './Passenger.module.css';
 import Countdown from "../../countdown/Countdown";
-
+import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import axios from "axios";
 
@@ -20,10 +20,24 @@ function Passenger(){
 
     const [isSignInActive, setIsSignInActive] = useState(false);
 
+    const navigate = useNavigate();
+
     function handleToggle(isActive) {
       setIsSignInActive(isActive);
     }
+    function clearAllFields() {
+      // Signup
+      setName("");
+      setEmail("");
+      setPassword("");
+      setDob("");
+      setGender("");
+      setOtp("");
 
+      // Login
+      setLoginEmail("");
+      setLoginPassword("");
+    }
     async function validation() {
         const trimmedName = name.trim();
         const trimmedEmail = email.trim();
@@ -70,9 +84,11 @@ function Passenger(){
               if(!verification){
                 setVerification(true);
                 toast.success("Check your email for OTP.",{containerId:"right"});
+              }else{
+                toast.success("OTP has been resent successfully.", { containerId: "right" });
               }
             }else{
-                toast.error(res.data.message);
+                toast.error(res.data.message,{containerId:"right"});
             }
         }
         catch(err){
@@ -85,6 +101,8 @@ function Passenger(){
             return toast.error("Verification is required to proceed",{containerId:"right"});
         if (!otp) 
             return toast.error("Please enter OTP",{containerId:"right"});
+        if (!/^\d+$/.test(otp))
+            return toast.error("OTP must contain only numbers", { containerId: "right" });
         if (otp.length !== 6) 
             return toast.error("OTP must be 6 digits",{containerId:"right"});
         if (!/^\S+$/.test(otp))
@@ -97,18 +115,14 @@ function Passenger(){
             name:trimmedName,email:trimmedEmail,password,dob,gender, otp: Number(otp)
           })
           if(res.data.success){
-              toast.success("Otp Succesfully Verified!",{containerId:"right"});
-              setName("");
-              setEmail("");
-              setPassword("");
-              setOtp("");
-              setDob("");
-              setGender("");
+              toast.success("Successfully SignUp!",{containerId:"right"});
+              setTimeout(() => {
+                      window.location.reload();}
+                      , 2000);
           }else
               toast.error("Otp doesn't Match!",{containerId:"right"});
         }
         catch(err){
-            console.log(err);
             toast.error("Server busy!",{containerId:"right"});
         }
     }
@@ -123,15 +137,34 @@ function Passenger(){
           return toast.error("Invalid email format!", { containerId: "left" });
         }
 
-        // Password validation (no trimming!)
+        // Password validation
         if (!loginPassword) {
           return toast.error("Password is required!", { containerId: "left" });
         } else if (loginPassword.length < 6) {
-          return toast.error("Password must be at least 6 characters long!", { containerId: "left" });
+          return toast.error("Invalid password.", { containerId: "left" });
         } else if (/\s/.test(loginPassword)) {
           return toast.error("Password must not contain spaces!", { containerId: "left" });
         }
-        toast.success("Successfully validated!", { containerId: "left" });
+        
+        try {
+          const res = await axios.post("http://localhost:3000/p/login", {
+            email: trimmedEmail,
+            password : loginPassword,
+          });
+
+          if (res.data.success) {
+            toast.success("Login successful!", { containerId: "left" });
+            localStorage.setItem("token", res.data.token);
+            clearAllFields();
+            setTimeout(() => {
+              navigate("/passenger-home");
+            }, 1000);
+          } else {
+            toast.error(res.data.message, { containerId: "left" });
+          }
+        } catch (error) {
+          toast.error("Server error!", {containerId: "left",});
+        }
     }
     //for counter
     const [resetKey, setResetKey] = useState(0);

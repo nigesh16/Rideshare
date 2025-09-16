@@ -14,10 +14,29 @@ pnpm-debug.log*
 # Environment files
 .env
 .env.local
+.env.*.local
 
-# OS system files
+# Editor / OS system files
 .DS_Store
 Thumbs.db
-
-# VS Code settings
 .vscode/
+
+# Cache
+*.cache
+.cache/
+.parcel-cache/
+.next/
+out/
+
+# Optional: lock files if you want only one type
+# yarn.lock
+# package-lock.json
+# pnpm-lock.yaml
+
+# Coverage / test
+coverage/
+*.lcov
+
+# Temporary
+temp/
+tmp/

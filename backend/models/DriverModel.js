@@ -9,7 +9,13 @@ const User = new mongoose.Schema({
   gender: { type: String, required: true},
   license: { type: String, required: true},
   adminverification: {type: Boolean , default:false},
-  profilePicture: { type: String, required: false },
+  profilePicture: {
+    data: Buffer,
+    contentType: String
+  },
+  rides: [
+    { type: mongoose.Schema.Types.ObjectId, ref: "Ride" }
+  ]
 });
 
 module.exports = mongoose.model('Drivers',User)

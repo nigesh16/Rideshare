@@ -1,8 +1,8 @@
 const express = require('express');
 const cors = require("cors");
 const db = require('./db');
-const driverRoutes = require('./routes/driverRoutes')
-const passengerRoutes = require('./routes/passengerRoutes')
+const driverRoutes = require('./routes/driver/driverRoutes')
+const passengerRoutes = require('./routes/passenger/passengerRoutes')
 require("dotenv").config();
 
 const app = express();

@@ -63,7 +63,7 @@ const DriverHome = () => {
 
     // 1️⃣ Validate places using OpenStreetMap Nominatim API (free)
     const fetchPlace = async (place) => {
-      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+      try{const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
         place
       )}`;
       const res = await axios.get(url);
@@ -72,6 +72,9 @@ const DriverHome = () => {
         lat: parseFloat(res.data[0].lat),
         lon: parseFloat(res.data[0].lon),
       };
+    }catch(e){
+      alert("Please check internet connection!");
+    }
     };
 
     const fromLocation = await fetchPlace(from);
@@ -108,24 +111,22 @@ const DriverHome = () => {
     setIsConfirmModalOpen(true);
   };
 
-    const postRide = async (distanceKm, fare) => {
-      return console.log("Workking buddy!")
+   const postRide = async () => {
       try {
         const token = localStorage.getItem("token");
         const postData = {
           from,
           to,
-          date,
+          date: new Date(date),
           time,
           carModel,
           carNumber,
           totalSeats,
           availableSeats: totalSeats,
-          distanceKm,
-          fare,
+          distanceKm: calculatedDistance,
+          fare: calculatedFare,        
         };
-
-        const res = await axios.post("http://localhost:3000/d/ride-post", postData, {
+        const res = await axios.post("http://localhost:3000/d/post-ride", postData, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -134,6 +135,8 @@ const DriverHome = () => {
           // Clear form
           setFrom(""); setTo(""); setDate(""); setTime("");
           setCarModel(""); setCarNumber(""); setTotalSeats(0);
+          setCalculatedDistance(0); // reset distance
+          setCalculatedFare(0);     // reset fare
         } else {
           toast.error(res.data.message || "Failed to post ride.", { containerId: "right" });
         }
@@ -142,6 +145,7 @@ const DriverHome = () => {
         toast.error("Server error!", { containerId: "right" });
       }
     };
+
 
 
   // Mock data for a logged-in driver

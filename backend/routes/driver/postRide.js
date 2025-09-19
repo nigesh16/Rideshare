@@ -1,14 +1,15 @@
 const express = require("express");
 const router = express.Router();
-const Ride = require("../../models/Ride");
-const verifyDriver = require("../../middleware/verifyDriver"); // middleware to get driverId
+const Ride = require("../../models/RideModel");
+const verifyDriver = require("../middleware/verifyDriver"); // middleware to get driverId
 
 // POST /d/post-ride
-router.post("/d/post-ride", verifyDriver, async (req, res) => {
+router.post("/post-ride", verifyDriver, async (req, res) => {
   try {
-    const { from, to, date, time, totalSeats, fare, distanceKm } = req.body;
+    const { from, to, date, time, totalSeats, fare, distanceKm, carModel, carNumber } = req.body;
 
-    if (!from || !to || !date || !time || !totalSeats || !fare) {
+    // Check required fields
+    if (!from || !to || !date || !time || !totalSeats || !fare || !carModel || !carNumber) {
       return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
@@ -16,13 +17,15 @@ router.post("/d/post-ride", verifyDriver, async (req, res) => {
       driverId: req.user.id, // from verifyDriver middleware
       from,
       to,
-      date,
+      date: new Date(date),
       time,
-      totalSeats,
-      availableSeats: totalSeats, // initially all seats available
-      fare,
-      distanceKm,
-      status: "available"
+      carModel,
+      carNumber,
+      totalSeats: Number(totalSeats),
+      availableSeats: Number(totalSeats), // initially all seats available
+      fare: Number(fare),
+      distanceKm: Number(distanceKm),
+      status: "available",
     });
 
     await ride.save();
@@ -37,5 +40,6 @@ router.post("/d/post-ride", verifyDriver, async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 
 module.exports = router;

@@ -96,9 +96,11 @@ function Driver(){
               if(!verification){
                 setVerification(true);
                 toast.success("Check your email for OTP.",{containerId:"right"});
+              }else{
+                toast.success("OTP resent successfully",{containerId:"right"});
               }
             }else{
-                toast.error(res.data.message);
+                toast.error(res.data.message,{containerId:"right"});
             }
         }
         catch(err){
@@ -160,7 +162,11 @@ function Driver(){
             const res = await axios.post("http://localhost:3000/d/login",{
             email:trimmedEmail,password:loginPassword})
             if(!res.data.success){
+              if(res.data.message === "Admin verification in process"){
+                toast.info("Admin verification in process",{containerId:"left"})
+              }else{
                 toast.error(res.data.message,{containerId:"left"});
+              }
             }
             else{
                 toast.success("Successfully login!",{containerId:"left"});

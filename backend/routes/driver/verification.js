@@ -17,7 +17,8 @@ router.post("/check-email", async (req, res) => {
   const { name, email } = req.body;
   const existingUser = await User.findOne({ email });
 
-  if (existingUser) return res.json({ success: false, message: "User already exists" });
+  if (existingUser)
+    return res.json({ success: false, message: "User already exists" });
 
   const otp = Math.floor(100000 + Math.random() * 900000);
   try {

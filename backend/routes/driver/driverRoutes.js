@@ -4,7 +4,7 @@ const router = express.Router();
 // Import separate route files
 const verificationRoutes = require('./verification');
 const loginRoutes = require('./login');
-const postRideRoutes = require("./driver/postRide");
+const postRideRoutes = require("./postRide");
 
 // Use them
 router.use('/', verificationRoutes);

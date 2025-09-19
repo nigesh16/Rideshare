@@ -9,16 +9,11 @@ const verifyDriver = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "yourSecretKey");
-
-    if (decoded.role !== "driver") {
-      return res.status(403).json({ success: false, message: "Forbidden: Not a driver" });
-    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // attach driver info to request
     req.user = {
       id: decoded.id,   // driverId
-      role: decoded.role
     };
 
     next();

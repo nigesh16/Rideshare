@@ -4,9 +4,20 @@ const router = express.Router();
 // Import separate route files
 const verificationRoutes = require('./verification');
 const loginRoutes = require('./login');
+const getRideRoutes = require('./getRide');
+const bookRideRoutes = require('./bookRide');
+const bookedRideRoutes = require('./bookedRide');
+const cancelRideRoutes = require('./cancelRide');
+const RideHistoryRoutes = require('./rideHistory')
 
 // Use them
 router.use('/', verificationRoutes);
 router.use('/', loginRoutes);
+router.use('/', getRideRoutes);
+router.use('/', bookRideRoutes);
+router.use('/', bookedRideRoutes);
+router.use('/', cancelRideRoutes);
+router.use('/', RideHistoryRoutes);
+
 
 module.exports = router;

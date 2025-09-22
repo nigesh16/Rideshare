@@ -16,7 +16,7 @@ router.post("/login", async (req, res) => {
   if(!user.adminverification){
       return res.json({ success: false, message: "Admin verification in process" });
   }
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  const token = jwt.sign({ id: user._id ,role: "driver"}, process.env.JWT_SECRET, { expiresIn: '7d' });
   res.json({ success: true, message: "Successfully login!", token});
 });
 

@@ -3,244 +3,335 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 import { toast,ToastContainer } from "react-toastify";
+import { io } from "socket.io-client";
 
 const DriverHome = () => {
-  const navigate = useNavigate(); 
+    const navigate = useNavigate(); 
 
-  const [userId, setUserId] = useState(null);
-  const [userName, setUserName] = useState("");
+    const [userId, setUserId] = useState(null);
+    const [userName, setUserName] = useState("");
 
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [carModel, setCarModel] = useState("");
-  const [carNumber, setCarNumber] = useState("");
-  const [totalSeats, setTotalSeats] = useState("");
-  const [farePerKm, setFarePerKm] = useState(10); 
+    const [from, setFrom] = useState("");
+    const [to, setTo] = useState("");
+    const [date, setDate] = useState("");
+    const [time, setTime] = useState("");
+    const [carModel, setCarModel] = useState("");
+    const [carNumber, setCarNumber] = useState("");
+    const [carColor, setCarColor] = useState("");
+    const [totalSeats, setTotalSeats] = useState("");
+    const farePerKm = 10; 
 
-  const [calculatedDistance, setCalculatedDistance] = useState(0);
-  const [calculatedFare, setCalculatedFare] = useState(0);
+    const [calculatedDistance, setCalculatedDistance] = useState(0);
+    const [calculatedFare, setCalculatedFare] = useState(0);
 
-  const [activeTab, setActiveTab] = useState('posted');
-  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-  // State for the new confirmation modal
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('posted');
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  useEffect(() => {
-      // Get token from localStorage
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/driver");
-        return;
-      }
-  
-      // Call backend to verify token and get userId
-      axios.get("http://localhost:3000/d/user-info", {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      .then(res => {
-        setUserId(res.data.userId);
-        setUserName(res.data.name);
-      })
-      .catch(err => {
-        localStorage.removeItem("token");
-        navigate("/driver"); // token invalid or expired
-      });
-  
-    }, [navigate]);
-
-     const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Check date-time: must be at least 1 day ahead
-    const rideDateTime = new Date(`${date}T${time}`);
-    const now = new Date();
-    if (rideDateTime <= now) {
-      alert("Ride must be scheduled at least 1 day ahead!");
-      return;
-    }
-
-    // 1️⃣ Validate places using OpenStreetMap Nominatim API (free)
-    const fetchPlace = async (place) => {
-      try{const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-        place
-      )}`;
-      const res = await axios.get(url);
-      if (res.data.length === 0) return null;
-      return {
-        lat: parseFloat(res.data[0].lat),
-        lon: parseFloat(res.data[0].lon),
-      };
-    }catch(e){
-      alert("Please check internet connection!");
-    }
-    };
-
-    const fromLocation = await fetchPlace(from);
-    if (!fromLocation) {
-      alert("Pick-up location not found!");
-      return;
-    }
-
-    const toLocation = await fetchPlace(to);
-    if (!toLocation) {
-      alert("Destination location not found!");
-      return;
-    }
-
-    // 2️⃣ Calculate distance using Haversine formula
-    const toRad = (x) => (x * Math.PI) / 180;
-    const R = 6371; // km
-    const dLat = toRad(toLocation.lat - fromLocation.lat);
-    const dLon = toRad(toLocation.lon - fromLocation.lon);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(toRad(fromLocation.lat)) *
-        Math.cos(toRad(toLocation.lat)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distanceKm = R * c;
-
-    setCalculatedDistance(distanceKm.toFixed(2));
-
-    // 3️⃣ Calculate fare
-    const fare = distanceKm * farePerKm;
-    setCalculatedFare(fare.toFixed(2));
-    setIsConfirmModalOpen(true);
-  };
-
-   const postRide = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const postData = {
-          from,
-          to,
-          date: new Date(date),
-          time,
-          carModel,
-          carNumber,
-          totalSeats,
-          availableSeats: totalSeats,
-          distanceKm: calculatedDistance,
-          fare: calculatedFare,        
-        };
-        const res = await axios.post("http://localhost:3000/d/post-ride", postData, {
-          headers: { Authorization: `Bearer ${token}` },
+      const [socket, setSocket] = useState(null);
+      // setup socket connection
+      useEffect(() => {
+        const newSocket = io("http://localhost:3000", {
+          auth: { token: localStorage.getItem("token") },
+          transports: ["websocket", "polling"], // fallback
         });
 
-        if (res.data.success) {
-          toast.success("Ride posted successfully!", { containerId: "right" });
-          // Clear form
-          setFrom(""); setTo(""); setDate(""); setTime("");
-          setCarModel(""); setCarNumber(""); setTotalSeats(0);
-          setCalculatedDistance(0); // reset distance
-          setCalculatedFare(0);     // reset fare
-        } else {
-          toast.error(res.data.message || "Failed to post ride.", { containerId: "right" });
+        newSocket.on("connect", () => {
+          console.log("✅ Connected to Socket.IO server:", newSocket.id);
+        });
+
+        newSocket.on("connect_error", (err) => {
+          console.error("❌ Socket.IO connection error:", err.message);
+        });
+
+        setSocket(newSocket);
+
+        // Cleanup on unmount
+        return () => newSocket.disconnect();
+      }, []);
+
+    //Token Verify
+    useEffect(() => {
+        // Get token from localStorage
+        const token = localStorage.getItem("token");
+        if (!token) {
+          navigate("/driver");
+          return;
         }
-      } catch (err) {
-        console.error(err);
-        toast.error("Server error!", { containerId: "right" });
+    
+        // Call backend to verify token and get userId
+        axios.get("http://localhost:3000/d/user-info", {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        .then(res => {
+          setUserId(res.data.userId);
+          setUserName(res.data.name);
+        })
+        .catch(err => {
+          localStorage.removeItem("token");
+          navigate("/driver"); // token invalid or expired
+        });
+    
+      }, [navigate]);
+
+    //Show driver posted rides
+    const [postedRides, setPostedRides] = useState([]);
+      useEffect(() => {
+      const fetchDriverRides = async () => {
+        try {
+          const token = localStorage.getItem("token");
+          const res = await axios.get("http://localhost:3000/d/posted-rides", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          setPostedRides(res.data.rides);
+          setUserId(res.data.driverId);
+        } catch (err) {
+          console.error(
+            "Error fetching posted rides:",
+            err.response?.data || err.message
+          );
+        }
+      };
+
+      fetchDriverRides();
+    }, []);
+
+    //Validation for Posting New Ride
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+
+      // Check date-time: must be at least 1 day ahead
+      const rideDateTime = new Date(`${date}T${time}`);
+      const now = new Date();
+      if (rideDateTime <= now) {
+        alert("Ride must be scheduled at least 1 day ahead!");
+        return;
       }
+
+      // 1️⃣ Validate places using OpenStreetMap Nominatim API (free)
+      const fetchPlace = async (place) => {
+        try{const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          place
+        )}`;
+        const res = await axios.get(url);
+        if (res.data.length === 0) return null;
+        return {
+          lat: parseFloat(res.data[0].lat),
+          lon: parseFloat(res.data[0].lon),
+        };
+      }catch(e){
+        alert("Please check internet connection!");
+      }
+      };
+
+      const fromLocation = await fetchPlace(from);
+      if (!fromLocation) {
+        alert("Pick-up location not found!");
+        return;
+      }
+
+      const toLocation = await fetchPlace(to);
+      if (!toLocation) {
+        alert("Destination location not found!");
+        return;
+      }
+
+      // 2️⃣ Calculate distance using Haversine formula
+      const toRad = (x) => (x * Math.PI) / 180;
+      const R = 6371; // km
+      const dLat = toRad(toLocation.lat - fromLocation.lat);
+      const dLon = toRad(toLocation.lon - fromLocation.lon);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(fromLocation.lat)) *
+          Math.cos(toRad(toLocation.lat)) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distanceKm = R * c;
+
+      setCalculatedDistance(distanceKm.toFixed(2));
+
+      // 3️⃣ Calculate fare
+      const fare = distanceKm * farePerKm;
+      setCalculatedFare(fare.toFixed(2));
+      setIsConfirmModalOpen(true);
+    };
+
+    //Posting New Rides
+    const postRide = async () => {
+        try {
+          const token = localStorage.getItem("token");
+          const postData = {
+            from,
+            to,
+            date: new Date(date),
+            time,
+            carModel,
+            carNumber,
+            carColor,
+            totalSeats,
+            availableSeats: totalSeats,
+            distanceKm: calculatedDistance,
+            fare: calculatedFare,        
+          };
+          const res = await axios.post("http://localhost:3000/d/post-ride", postData, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (res.data.success) {
+            toast.success("Ride posted successfully!");
+            // Clear form
+            setFrom(""); setTo(""); setDate(""); setTime("");
+            setCarModel(""); setCarNumber(""); setTotalSeats(""); setCarNumber("");
+            setCarColor("");
+            setCalculatedDistance(0); // reset distance
+            setCalculatedFare(0);     // reset fare
+          } else {
+            toast.error(res.data.message || "Failed to post ride.");
+          }
+        } catch (err) {
+          toast.error("Server error!");
+        }
+    };
+
+    //view specific posted rides - Navigate
+    const handleRideClick = (ride) => {
+      navigate("/driver/posted-ride", { state: { ride, driverId: userId } });
     };
 
 
+  // Driver ride history
+  const [rideHistory, setRideHistory] = useState([]);
+  useEffect(() => {
+    const fetchRideHistory = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:3000/d/ride-history", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) setRideHistory(data.rides);
+      } catch (err) {
+        console.error("Error fetching ride history:", err);
+      }
+    };
 
-  // Mock data for a logged-in driver
-  const driver = {
-    name: 'John Doe',
-    profilePic: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?fit=facearea&face=80%2C80',
-  };
-
-  // Mock data for posted rides
-  const [postedRides, setPostedRides] = useState([
-    {
-      id: 1,
-      from: '123 Main St, Anytown',
-      to: '456 Oak Ave, Somewhere City',
-      date: 'Oct 26, 2025',
-      time: '08:00 AM',
-      seatsBooked: 2,
-      totalSeats: 4,
-      passengers: [{ name: 'Jane Doe' }, { name: 'Peter Pan' }]
-    },
-    {
-      id: 2,
-      from: '789 Pine Ln, Somewhere City',
-      to: '101 Elm Dr, Anytown',
-      date: 'Oct 27, 2025',
-      time: '06:30 PM',
-      seatsBooked: 0,
-      totalSeats: 3,
-      passengers: []
-    },
-  ]);
-
-  // Mock data for ride history with fares
-  const [rideHistory, setRideHistory] = useState([
-    { id: 3, passenger: 'Mike Johnson', date: 'Oct 15, 2025', from: 'Home', to: 'Airport', time: '10:00 AM', fare: 25.50 },
-    { id: 4, passenger: 'Emily Davis', date: 'Oct 10, 2025', from: 'City Center', to: 'Museum', time: '2:00 PM', fare: 15.75 },
-  ]);
+    fetchRideHistory();
+  }, []);
 
   // Mock chat data with passengers
-  const [chats, setChats] = useState([
-    {
-      id: 1,
-      passenger: { name: 'Jane Doe', profilePic: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?fit=facearea&face=80%2C80' },
-      lastMessage: "I'll be there in 5 minutes.",
-      lastMessageTime: '12:55 PM',
-      messages: [
-        { sender: 'driver', text: "Hey Jane, I'll be there in a few minutes.", time: '12:55 PM' },
-        { sender: 'passenger', text: "Great, thanks for the update!", time: '12:56 PM' }
-      ]
-    },
-    {
-      id: 2,
-      passenger: { name: 'Peter Pan', profilePic: 'https://images.unsplash.com/photo-1579783483458-1328d0859663?fit=facearea&face=80%2C80' },
-      lastMessage: "My car is a white Toyota Camry.",
-      lastMessageTime: '7:30 AM',
-      messages: [
-        { sender: 'passenger', text: "My car is a white Toyota Camry.", time: '7:30 AM' },
-        { sender: 'driver', text: "Got it. I'm wearing a red jacket.", time: '7:31 AM' }
-      ]
-    }
-  ]);
-
+  const [chats, setChats] = useState([])
   const [chatToView, setChatToView] = useState(null);
-  const [rideToPost, setRideToPost] = useState({ 
-    from: '', 
-    to: '', 
-    date: '', 
-    time: '', 
-    totalSeats: '',
-    carModel: '', // New field for car model
-    carNo: '' // New field for car number
-  });
+  const [messageText, setMessageText] = useState("");
 
-  const handlePostRide = (e) => {
-    e.preventDefault();
-    setIsConfirmModalOpen(true);
-  };
+    useEffect(() => {
+      if (!chatToView) {
+        axios.get("http://localhost:3000/chat", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        })
+        .then(res => setChats(res.data))
+        .catch(err => console.error(err));
+      }
+    }, [chatToView]);
 
-  const confirmPostRide = () => {
-    setCanPost(true);
-    setIsConfirmModalOpen(false); // Close the modal
-    setActiveTab('posted'); // Navigate back to the "Posted Rides" tab
-  };
 
-  const handleLogout = () => {
-    setIsLogoutModalOpen(true);
-  };
+      // Join chat room & listen for messages
+      useEffect(() => {
+        if (!chatToView) return;
+        const otherUserId = chatToView.passenger._id;
+        socket.emit("joinChat", { otherUserId });
 
-  const confirmLogout = () => {
-    window.location.href = '/';
-  };
+        socket.on("receiveMessage", (msg) => {
+          if (msg.senderId === otherUserId || msg.sender === "passenger") {
+            setChatToView(prev => ({ ...prev, messages: [...prev.messages, msg] }));
+            setChats(prev => prev.map(c => c.passenger._id === otherUserId ? { ...c, lastMessage: msg.text, lastMessageTime: msg.time } : c));
+          }
+        });
 
-  const handleScrollToSupport = () => {
-    document.getElementById('support-section').scrollIntoView({ behavior: 'smooth' });
-  };
+        return () => socket.off("receiveMessage");
+      }, [chatToView]);
+
+      const sendMessage = () => {
+        if (!messageText.trim()) return;
+
+        const newMsg = {
+          text: messageText,
+          sender: "driver",
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          _id: Date.now(),
+          senderId: userId
+        };
+
+        // Update current chat view
+        setChatToView(prev => ({
+          ...prev,
+          messages: [...prev.messages, newMsg]
+        }));
+
+        // Update chats preview list immediately
+        setChats(prevChats =>
+          prevChats.map(c =>
+            c.passenger._id === chatToView.passenger._id
+              ? { ...c, lastMessage: newMsg.text, lastMessageTime: newMsg.time }
+              : c
+          )
+        );
+
+        // Emit socket for real-time
+        socket.emit("sendMessage", {
+          text: messageText,
+          otherUserId: chatToView.passenger._id
+        });
+
+        setMessageText("");
+      };
+
+
+
+      //     NOTED ------------------------------------------------------(We needs to check this one needed or not!)
+      const handleChatSelect = (chat) => {
+        setChatToView(chat);
+      };
+
+
+  //   {
+  //     id: 1,
+  //     passenger: { name: 'Jane Doe', profilePic: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?fit=facearea&face=80%2C80' },
+  //     lastMessage: "I'll be there in 5 minutes.",
+  //     lastMessageTime: '12:55 PM',
+  //     messages: [
+  //       { sender: 'driver', text: "Hey Jane, I'll be there in a few minutes.", time: '12:55 PM' },
+  //       { sender: 'passenger', text: "Great, thanks for the update!", time: '12:56 PM' }
+  //     ]
+  //   },
+  //   {
+  //     id: 2,
+  //     passenger: { name: 'Peter Pan', profilePic: 'https://images.unsplash.com/photo-1579783483458-1328d0859663?fit=facearea&face=80%2C80' },
+  //     lastMessage: "My car is a white Toyota Camry.",
+  //     lastMessageTime: '7:30 AM',
+  //     messages: [
+  //       { sender: 'passenger', text: "My car is a white Toyota Camry.", time: '7:30 AM' },
+  //       { sender: 'driver', text: "Got it. I'm wearing a red jacket.", time: '7:31 AM' }
+  //     ]
+  //   }
+  // ]);
+
+  
+
+    const handleLogout = () => {
+      setIsLogoutModalOpen(true);
+    };
+
+    const confirmLogout = () => {
+      window.location.href = '/';
+    };
+    // for scroll to support-help section
+    const handleScrollToSupport = () => {
+      document.getElementById('support-section').scrollIntoView({ behavior: 'smooth' });
+    };
 
   // Inline SVG Icons from the PassengerHome file
   const UserCircleIcon = (props) => (
@@ -291,41 +382,68 @@ const DriverHome = () => {
     </svg>
   );
 
+
+
+  const defaultProfilePic =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a0aec0'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+
   const renderContent = () => {
     switch (activeTab) {
       case 'posted':
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
-            <h3 className="text-2xl font-bold text-[#04007f] dark:text-[#2fff75] mb-4">My Posted Rides</h3>
-            {postedRides.length > 0 ? (
-              <ul className="space-y-4">
-                {postedRides.map(ride => (
-                  <li key={ride.id} className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center">
-                    <div className="flex flex-col space-y-2 mb-4 md:mb-0">
-                      <div className="text-lg font-medium text-gray-800 dark:text-gray-200">
-                        <span className="font-semibold">{ride.from}</span> to <span className="font-semibold">{ride.to}</span>
-                      </div>
-                      <div className="text-gray-600 dark:text-gray-400 text-sm">
-                        <span>{ride.date} at {ride.time}</span>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <span className="text-lg font-bold text-gray-800 dark:text-gray-200">
-                        {ride.seatsBooked} of {ride.totalSeats} seats booked
-                      </span>
-                      {ride.passengers.length > 0 && (
-                        <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                          Passengers: {ride.passengers.map(p => p.name).join(', ')}
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-center text-gray-500 dark:text-gray-400">You haven't posted any rides yet.</p>
-            )}
-          </div>
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
+      <h3 className="text-2xl font-bold text-[#04007f] dark:text-[#2fff75] mb-4">
+        My Posted Rides
+      </h3>
+
+      {postedRides.length > 0 ? (
+        <ul className="space-y-4">
+          {postedRides.map((ride) => (
+            <li
+              key={ride._id}
+              onClick={() => handleRideClick(ride)}
+              className="cursor-pointer bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+            >
+              <div className="flex flex-col space-y-2 mb-4 md:mb-0">
+                <div className="text-lg font-medium text-gray-800 dark:text-gray-200">
+                  <span className="font-semibold">{ride.from}</span> to{" "}
+                  <span className="font-semibold">{ride.to}</span>
+                </div>
+                <div className="text-gray-600 dark:text-gray-400 text-sm">
+                  <span>
+                    {new Date(ride.date).toLocaleDateString("en-GB", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric"
+                            })} at {new Date(`1970-01-01T${ride.time}`).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-end">
+                <span className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                  {ride.totalSeats - ride.availableSeats} of {ride.totalSeats}{" "}
+                  seats booked
+                </span>
+
+                {ride.passengers?.length > 0 && (
+                  <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    Passengers:{" "}
+                    {ride.passengers
+                      .map((p) => p.passengerId?.name || "Unknown")
+                      .join(", ")}
+                  </div>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-center text-gray-500 dark:text-gray-400">
+          You haven't posted any rides yet.
+        </p>
+      )}
+    </div>
         );
       case 'post':
         return (
@@ -399,6 +517,17 @@ const DriverHome = () => {
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Car Color</label>
+                <input
+                  type="text"
+                  value={carColor}
+                  onChange={(e) => setCarColor(e.target.value)}
+                  className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-[#5252c3] focus:border-[#5252c3] dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  placeholder="e.g., silver"
+                  required
+                />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Total Seats</label>
                 <input
                   type="number"
@@ -422,23 +551,35 @@ const DriverHome = () => {
         );
       case 'history':
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-            <h3 className="text-2xl font-bold text-[#04007f] dark:text-[#2fff75] mb-4">Ride History</h3>
+                  <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+            <h3 className="text-2xl font-bold text-[#04007f] dark:text-[#2fff75] mb-4">
+              Ride History
+            </h3>
             {rideHistory.length > 0 ? (
               <ul className="space-y-4">
-                {rideHistory.map(ride => (
-                  <li key={ride.id} className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm flex flex-col md:flex-row justify-between items-center">
+                {rideHistory.map((ride) => (
+                  <li
+                    key={ride._id}
+                    onClick={() => navigate("/driver/history-ride", { state: { ride } })}
+                    className="cursor-pointer bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm flex flex-col md:flex-row justify-between items-center hover:shadow-lg transition"
+                  >
                     <div className="text-lg font-medium text-gray-800 dark:text-gray-200">
-                      <span className="font-semibold">{ride.from}</span> to <span className="font-semibold">{ride.to}</span>
+                      <span className="font-semibold">{ride.from}</span> →{" "}
+                      <span className="font-semibold">{ride.to}</span>
                     </div>
                     <div className="text-gray-600 dark:text-gray-400 text-sm mt-2 md:mt-0">
-                      Passenger: {ride.passenger} | {ride.date} | <span className="font-bold text-[#04007f] dark:text-[#2fff75]">${ride.fare.toFixed(2)}</span>
+                      {new Date(ride.date).toLocaleDateString()} |{" "}
+                      <span className="font-bold text-[#04007f] dark:text-[#2fff75]">
+                        ₹{ride.fare}
+                      </span>
                     </div>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-center text-gray-500 dark:text-gray-400">You have no ride history.</p>
+              <p className="text-center text-gray-500 dark:text-gray-400">
+                You have no ride history.
+              </p>
             )}
           </div>
         );
@@ -457,7 +598,7 @@ const DriverHome = () => {
                   <div className="w-8 h-8"></div>
                 </div>
                 <div className="flex-1 overflow-y-auto space-y-4">
-                  {chatToView.messages.map((msg, index) => (
+                  {chatToView.messages.map((msg,index) => (
                     <div key={index} className={`flex ${msg.sender === 'driver' ? 'justify-end' : 'justify-start'}`}>
                       <div className={`p-3 rounded-2xl max-w-xs ${msg.sender === 'driver' ? 'bg-[#04007f] text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200'}`}>
                         <p className="text-sm">{msg.text}</p>
@@ -470,13 +611,16 @@ const DriverHome = () => {
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
+                      value={messageText}
+                      onChange={(e) => setMessageText(e.target.value)}
                       placeholder="Type a message..."
                       className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#5252c3] dark:focus:ring-[#2fff75] dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
-                    <button className="px-4 py-2 bg-[#04007f] text-white font-bold rounded-full shadow-lg hover:bg-[#5252c3] transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                      </svg>
+                    <button
+                      onClick={sendMessage}
+                      className="px-4 py-2 bg-[#04007f] text-white font-bold rounded-full shadow-lg hover:bg-[#5252c3] transition-colors"
+                    >
+                      <i className="fas fa-paper-plane"></i>
                     </button>
                   </div>
                 </div>
@@ -486,10 +630,10 @@ const DriverHome = () => {
                 <h3 className="text-2xl font-bold text-[#04007f] dark:text-[#2fff75] mb-4">Messages</h3>
                 {chats.length > 0 ? (
                   <ul className="space-y-4">
-                    {chats.map(chat => (
-                      <li key={chat.id}>
-                        <button onClick={() => setChatToView(chat)} className="w-full text-left bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200 flex items-center gap-4">
-                          <img src={chat.passenger.profilePic} alt={chat.passenger.name} className="w-12 h-12 rounded-full object-cover" />
+                    {chats.map((chat, index)=> (
+                      <li key={index}>
+                        <button onClick={() => handleChatSelect(chat)} className="w-full text-left bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200 flex items-center gap-4">
+                          <img src={defaultProfilePic} alt={chat.passenger.name} className="w-12 h-12 rounded-full object-cover" />
                           <div className="flex-1">
                             <div className="text-lg font-medium text-gray-800 dark:text-gray-200 flex justify-between items-center">
                               <span>{chat.passenger.name}</span>
@@ -515,6 +659,8 @@ const DriverHome = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col items-center">
+      
+      {/* Confirmation for logout */}
       {isLogoutModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 text-center max-w-sm w-full">
@@ -538,6 +684,7 @@ const DriverHome = () => {
         </div>
       )}
 
+      {/* Confirmation for post ride */}
       {isConfirmModalOpen && (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 text-center max-w-sm w-full">
@@ -571,18 +718,29 @@ const DriverHome = () => {
 
       {/* Navbar Section */}
       <div className="flex flex-wrap justify-between items-center w-full px-6 py-4 bg-white dark:bg-gray-800 shadow-md">
-        <h1 className="text-2xl font-bold text-[#04007f] dark:text-[#2fff75]">Driver Dashboard</h1>
-        <nav className="flex items-center space-x-4">
-          <button onClick={handleScrollToSupport} className="pr-2 text-sm font-medium hover:text-[#5252c3] dark:hover:text-[#2fff75] transition-colors flex items-center">
-            <HelpIcon className="w-4 h-4 mr-1" /> Help & Support
+        <h1 className="text-2xl font-bold text-[#04007f] dark:text-[#2fff75]">RideShare</h1>
+        <button
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="text-gray-800 dark:text-gray-200 text-2xl sm:hidden focus:outline-none"
+        >
+          <i className="fas fa-bars"></i>
+        </button>
+        <nav
+          className={`${isMenuOpen ? 'flex' : 'hidden'} flex-col sm:flex sm:flex-row items-start sm:items-center w-full sm:w-auto space-y-2 sm:space-y-0 sm:space-x-4 mt-4 sm:mt-0 transition-all duration-300 ease-in-out`}
+        >
+          <button onClick={() => { navigate('/driver/profile'); setIsMenuOpen(false); }} className="text-sm font-medium hover:text-[#5252c3] dark:hover:text-[#2fff75] transition-colors flex items-center mr-3">
+            <i className="fas fa-user-circle mr-1"></i> Profile
+          </button>
+          <button onClick={handleScrollToSupport} className="pr-2 text-sm font-medium hover:text-[#5252c3] dark:hover:text-[#2fff75] transition-colors flex items-center ">
+            <i className="fas fa-question-circle mr-1"></i> Help & Support
           </button>
           <button onClick={handleLogout} className="text-sm font-medium hover:text-[#5252c3] dark:hover:text-[#2fff75] transition-colors flex items-center">
-            <LogoutIcon className="w-4 h-4 mr-1" /> Logout
+            <i className="fas fa-sign-out-alt mr-1"></i> Logout
           </button>
-          <img src={driver.profilePic} alt={driver.name} className="w-10 h-10 rounded-full object-cover" />
         </nav>
       </div>
 
+      {/* Main content */}
       <div className="container mx-auto p-6 md:p-10 w-full max-w-5xl">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
           <h2 className="text-3xl font-extrabold text-center mb-2">Welcome aboard, {userName}!</h2>
@@ -618,6 +776,8 @@ const DriverHome = () => {
         
         {renderContent()}
       </div>
+      
+      {/* Support-section */}
       <div id="support-section" className="w-full max-w-5xl bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8 text-center">
         <h3 className="text-2xl font-bold text-[#04007f] dark:text-[#2fff75] mb-4">Help & Support</h3>
         <p className="text-gray-600 dark:text-gray-400 mb-2">If you have any issues or need to report a problem, please contact us:</p>
@@ -629,9 +789,11 @@ const DriverHome = () => {
           <div className="flex items-center space-x-2">
             <PhoneIcon className="w-6 h-6 text-[#04007f] dark:text-[#2fff75]" />
             <span className="text-lg font-medium">Phone: 3453427529</span>
+            <ToastContainer position="top-center" autoClose={2000} hideProgressBar toastStyle={{width: "350px"}}/>
           </div>
         </div>
       </div>
+
     </div>
   );
 };

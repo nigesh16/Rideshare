@@ -1,15 +1,15 @@
 const express = require("express");
 const router = express.Router();
 const Ride = require("../../models/RideModel");
-const verifyDriver = require("../middleware/verifyDriver"); // middleware to get driverId
+const verifyDriver = require("../middleware/verifyDriver");
 
 // POST /d/post-ride
 router.post("/post-ride", verifyDriver, async (req, res) => {
   try {
-    const { from, to, date, time, totalSeats, fare, distanceKm, carModel, carNumber } = req.body;
+    const { from, to, date, time, totalSeats, fare, distanceKm, carModel, carNumber, carColor } = req.body;
 
     // Check required fields
-    if (!from || !to || !date || !time || !totalSeats || !fare || !carModel || !carNumber) {
+    if (!from || !to || !date || !time || !totalSeats || !fare || !carModel || !carNumber || !carColor) {
       return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
@@ -21,6 +21,7 @@ router.post("/post-ride", verifyDriver, async (req, res) => {
       time,
       carModel,
       carNumber,
+      carColor,
       totalSeats: Number(totalSeats),
       availableSeats: Number(totalSeats), // initially all seats available
       fare: Number(fare),

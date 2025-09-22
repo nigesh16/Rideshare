@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-const verifyDriver = (req, res, next) => {
+const verifyPassenger = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1]; // "Bearer <token>"
 
@@ -11,9 +11,9 @@ const verifyDriver = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // attach driver info to request
+    // attach passenger info to request
     req.user = {
-      id: decoded.id,   // driverId
+      id: decoded.id,   // passengerId
       role: decoded.role
     };
 
@@ -24,4 +24,5 @@ const verifyDriver = (req, res, next) => {
   }
 };
 
-module.exports = verifyDriver;
+module.exports = verifyPassenger;
+

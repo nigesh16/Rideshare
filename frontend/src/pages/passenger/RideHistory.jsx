@@ -54,8 +54,7 @@ const RideHistory = () => {
               {passengerData.seatsBooked}
             </li>
             <li className="flex items-center">
-              <span className="font-semibold mr-2">Fare Paid:</span> ₹
-              {passengerData.farePaid}
+              <span className="font-semibold mr-2">Fare Paid:</span> ₹{passengerData.farePaid.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
               <AiOutlineCheckCircle className="ml-2 text-green-500" />
             </li>
           </ul>

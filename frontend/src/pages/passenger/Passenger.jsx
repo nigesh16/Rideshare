@@ -154,7 +154,7 @@ function Passenger(){
 
           if (res.data.success) {
             toast.success("Login successful!", { containerId: "left" });
-            localStorage.setItem("token", res.data.token);
+            localStorage.setItem("passengerToken", res.data.token);
             clearAllFields();
             setTimeout(() => {
               navigate("/passenger-home");

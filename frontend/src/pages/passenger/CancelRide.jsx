@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
+import { FaRoute, FaCar, FaUser } from "react-icons/fa";
 
 const CancelRide = () => {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ const CancelRide = () => {
   const handleCancelRide = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("passengerToken");
       await axios.post(
         "http://localhost:3000/p/cancel",
         { rideId: ride._id },
@@ -82,11 +83,11 @@ const CancelRide = () => {
         <div className="space-y-4 text-left">
           {/* Ride Info */}
           <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-xl shadow-inner">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">
-              Ride Details
+            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+              <FaRoute /> Ride Details
             </h3>
             <p className="text-gray-700 dark:text-gray-300">
-              <span className="font-semibold">Route:</span> {ride.from} to {ride.to}
+              <span className="font-semibold">Route:</span> {ride.from} → {ride.to}
             </p>
             <p className="text-gray-700 dark:text-gray-300">
               <span className="font-semibold">Date & Time:</span> {new Date(ride.date).toLocaleDateString("en-GB", {
@@ -108,8 +109,8 @@ const CancelRide = () => {
 
           {/* Driver Info */}
           <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-xl shadow-inner">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">
-              Driver & Vehicle
+            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+              <FaUser /> Driver & Vehicle
             </h3>
             <div className="flex items-center gap-4 mb-4">
               <img
@@ -131,6 +132,7 @@ const CancelRide = () => {
               </div>
             </div>
             <p className="text-gray-700 dark:text-gray-300">
+              <FaCar className="inline mr-2" />
               <span className="font-semibold">Vehicle:</span> {ride.carModel}
             </p>
             <p className="text-gray-700 dark:text-gray-300">

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Calendar, Clock, Car, Users, Ticket, CheckCircle, X } from "lucide-react";
+import { FaRegCommentDots } from "react-icons/fa";
 
 const PostedRide = () => {
   const navigate = useNavigate();
@@ -120,6 +121,17 @@ const PostedRide = () => {
                     new Date(selectedPassenger.passengerId.dob).getFullYear()}</p>
                 <p>Seats Booked: {selectedPassenger.seatsBooked}</p>
                 <p>Paid: ₹{selectedPassenger.farePaid.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</p>
+                <button
+                  onClick={() => {
+                    navigate("/driver-home", {
+                      state: { openTab: "chats", passengerId: selectedPassenger.passengerId._id}
+                    });
+                  }}
+                  className="mt-4 flex items-center gap-2 px-4 py-2 bg-[#04007f] text-white rounded-full shadow-md hover:bg-[#5252c3]"
+                >
+                  <FaRegCommentDots className="w-5 h-5" />
+                  Message
+                </button>
               </div>
             </div>
           </div>

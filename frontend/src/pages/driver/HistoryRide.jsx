@@ -127,10 +127,10 @@ const HistoryRide = () => {
               <span className="font-semibold">Date:</span> {formattedDate}
             </p>
             <p className="flex items-center gap-1">
-              <Clock className="w-4 h-4" /> {ride.time}
+              <Clock className="w-4 h-4" /> {new Date(`1970-01-01T${ride.time}`).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
             </p>
             <p className="flex items-center gap-1">
-              <Ticket className="w-4 h-4" /> Fare per Seat: ₹{ride.fare}
+              <Ticket className="w-4 h-4" /> Fare per Seat: ₹{formatCurrency(ride.fare)}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
               <strong>Passengers:</strong> {passengerCount} •{" "}

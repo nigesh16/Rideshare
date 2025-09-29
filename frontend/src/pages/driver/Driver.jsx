@@ -170,7 +170,7 @@ function Driver(){
             }
             else{
                 toast.success("Successfully login!",{containerId:"left"});
-                localStorage.setItem("token", res.data.token);
+                localStorage.setItem("driverToken", res.data.token);
                 clearAllFields();
                   setTimeout(() => {
                     navigate("/driver-home");

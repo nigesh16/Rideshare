@@ -16,28 +16,7 @@ const PassengerHome = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false); // New state for mobile menu
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false); // New state for logout confirmation modal
 
-  const [socket, setSocket] = useState(null);
-  // setup socket connection
-      useEffect(() => {
-        const newSocket = io("http://localhost:3000", {
-          auth: { token: localStorage.getItem("passengerToken") },
-          transports: ["websocket", "polling"], // fallback
-        });
-
-        newSocket.on("connect", () => {
-          console.log("✅ Connected to Socket.IO server:", newSocket.id);
-        });
-
-        newSocket.on("connect_error", (err) => {
-          console.error("❌ Socket.IO connection error:", err.message);
-        });
-
-        setSocket(newSocket);
-
-        // Cleanup on unmount
-        return () => newSocket.disconnect();
-      }, []);
-
+      // Verify Token
       useEffect(() => {
           // Get token from localStorage
           const token = localStorage.getItem("passengerToken");
@@ -154,11 +133,6 @@ const PassengerHome = () => {
         setIsLogoutModalOpen(false);
       };
 
-      const handleChatSelect = (chat) => {
-        setChatToView(chat);
-        setIsMenuOpen(false);
-      };
-
 
   // Inline SVG Icons from the PassengerHome file
   const ChatIcon = (props) => (
@@ -202,78 +176,121 @@ const PassengerHome = () => {
   const defaultProfilePic =
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a0aec0'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
 
-//------------  Fetching Chat data  ------------------------
-  const [chatToView, setChatToView] = useState(null);
-  const [chats, setChats] = useState([]);
-  const [messageText, setMessageText] = useState("");
+ // -------------------- Socket Setup --------------------
+  const [socket, setSocket] = useState(null);
+  
+  useEffect(() => {
+    const token = localStorage.getItem("passengerToken");
+    if (!token) return;
 
-      // Fetch drivers for rides booked by passenger
-      useEffect(() => {
-        const fetchChats = async () => {
-          try {
-            const res = await axios.get("http://localhost:3000/chat", {
-              headers: { Authorization: `Bearer ${localStorage.getItem("passengerToken")}` }
-            });
-            setChats(res.data);
-          } catch (err) {
-            console.error("Error fetching chats:", err);
-          }
-        };
+    const newSocket = io("http://localhost:3000", {
+      auth: { token },
+      transports: ["websocket", "polling"],
+    });
 
-        if (!chatToView) {
-          fetchChats();
-        }
-      }, [chatToView]);
+    newSocket.on("connect", () => console.log("✅ Connected to Socket.IO server:", newSocket.id));
+    newSocket.on("connect_error", (err) => console.error("❌ Socket.IO connection error:", err.message));
 
-      useEffect(() => {
-        if (!chatToView) return;
-        const otherUserId = chatToView.driver._id;
-        socket.emit("joinChat", { otherUserId });
+    setSocket(newSocket);
+    return () => {
+      newSocket.disconnect();
+      setSocket(null);
+    };
+  }, []);
 
-        socket.on("receiveMessage", (msg) => {
-          if (msg.senderId === otherUserId || msg.sender === "driver") {
-            setChatToView(prev => ({ ...prev, messages: [...prev.messages, msg] }));
-            setChats(prev => prev.map(c => c.driver._id === otherUserId ? { ...c, lastMessage: msg.text, lastMessageTime: msg.time } : c));
-          }
+// -------------------- Chat state --------------------
+const [chats, setChats] = useState([]);
+const [chatToView, setChatToView] = useState(null);
+const [messageText, setMessageText] = useState("");
+
+
+  // ref to avoid stale closures
+  const chatToViewRef = useRef(chatToView);
+  useEffect(() => {
+    chatToViewRef.current = chatToView;
+  }, [chatToView]);
+
+  // fetch chats
+  useEffect(() => {
+    const fetchChats = async () => {
+      try {
+        const res = await axios.get("http://localhost:3000/chat", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("passengerToken")}` },
         });
+        const chatsWithUnread = res.data.map((c) => ({ ...c, unread: false }));
+        setChats(chatsWithUnread);
+      } catch (err) {
+        console.error("Error fetching chats:", err);
+      }
+    };
+    if (!chatToView) fetchChats();
+  }, [chatToView]);
 
-        return () => socket.off("receiveMessage");
-      }, [chatToView]);
+  // join rooms for chats once socket and chats are available
+  useEffect(() => {
+    if (!socket || !chats || chats.length === 0) return;
+    chats.forEach((c) => {
+      const otherId = c.driver?._id;
+      if (otherId) socket.emit("joinChat", { otherUserId: otherId });
+    });
+  }, [socket, chats]);
 
-      const sendMessage = () => {
-        if (!messageText.trim()) return;
+  // socket listener
+  useEffect(() => {
+    if (!socket) return;
+    const handleReceiveMessage = (msg) => {
+  const currentChat = chatToViewRef.current;
 
-        const msg = {
-          text: messageText,
-          otherUserId: chatToView.driver._id
-        };
+  // If viewing this chat, no unread
+  const isUnread = currentChat?.driver?._id !== msg.senderId;
 
-        socket.emit("sendMessage", msg);
+  setChats(prevChats =>
+    prevChats.map(c =>
+      c.driver?._id === msg.senderId
+        ? {
+            ...c,
+            lastMessage: msg.text,
+            lastMessageTime: msg.time,
+            unreadCount: isUnread ? (c.unreadCount || 0) + 1 : 0,
+          }
+        : c
+    )
+  );
 
-        const newMsg = {
-          text: messageText,
-          sender: "passenger",
-          time: new Date().toISOString() ,
-          _id: Date.now(), // temporary unique ID
-          senderId: userId
-        };
+  // Append to messages if this chat is open
+  if (!isUnread) {
+    setChatToView(prev => ({
+      ...prev,
+      messages: [...(prev?.messages || []), msg],
+    }));
+  }
+};
 
-        // Update messages in current chat view
-        setChatToView(prev => ({ 
-          ...prev, 
-          messages: [...prev.messages, newMsg] 
-        }));
+    socket.on("receiveMessage", handleReceiveMessage);
+    return () => socket.off("receiveMessage", handleReceiveMessage);
+  }, [socket]);
 
-        // Update last message in chats preview
-        setChats(prev => prev.map(c => 
-          c.driver._id === chatToView.driver._id 
-            ? { ...c, lastMessage: newMsg.text, lastMessageTime: newMsg.time } 
-            : c
-        ));
-
-        setMessageText("");
+  // send message
+  const sendMessage = () => {
+    if (!messageText.trim() || !chatToView?.driver?._id || !socket) return;
+    const newMsg = { text: messageText, sender: "passenger", time: new Date().toISOString(), _id: Date.now(), senderId: userId };
+    setChatToView((prev) => ({ ...prev, messages: [...(prev?.messages || []), newMsg] }));
+    setChats((prevChats) =>
+      prevChats.map((c) =>
+        c.driver?._id === chatToView.driver._id ? { ...c, lastMessage: newMsg.text, lastMessageTime: newMsg.time, unread: false } : c
+      )
+    );
+    socket.emit("sendMessage", { text: messageText, otherUserId: chatToView.driver._id });
+    setMessageText("");
+  };
+// -------------------- Handle Chat Select -------------------- 
+    const handleChatSelect = (chat) =>
+      { 
+        setChatToView(chat); // Reset unread when opening a chat
+        setIsMenuOpen(false); 
+        setChats((prevChats) => prevChats.map((c) => 
+          c.driver._id === chat.driver._id ? { ...c,  unreadCount: 0  } : c ) ); 
       };
-
 //-----------------------------------------------------------
 
 //------------------This All for inside messages-------------
@@ -333,20 +350,28 @@ const PassengerHome = () => {
       }
     };
 
+    // Used to comeback from another page intothis message page!
     useEffect(() => {
-      if (location.state?.openTab) {
-        setActiveTab(location.state.openTab);
-      }
-    }, [location.state]);
+            if (location.state?.openTab) {
+              setActiveTab(location.state.openTab);
+            }
+      }, [location.state]);
 
     useEffect(() => {
-      if (location.state?.driverId && chats.length > 0) {
-        const chatWithDriver = chats.find(c => c.driver?._id === location.state.driverId);
-        if (chatWithDriver) {
-          setChatToView(chatWithDriver); // 👈 directly open that conversation
+        if (location.state?.driverId && chats.length > 0) {
+          const chatWithDriver = chats.find(
+            c => c.driver._id === location.state.driverId
+          );
+          if (chatWithDriver) {
+            setChatToView(chatWithDriver);
+            setActiveTab("chats");
+          }
+
+          // ✅ clear state so clicking tab later won’t trigger
+          navigate(location.pathname, { replace: true });
         }
-      }
-    }, [location.state, chats]);
+      }, [location.state, chats]); 
+
 
 //------------------------------------------------------------
 
@@ -369,7 +394,10 @@ const PassengerHome = () => {
                           <span className="font-semibold">{ride.to}</span>
                         </div>
                         <div className="text-gray-600 dark:text-gray-400 text-sm mt-2 md:mt-0">
-                          Driver: {ride.driverId?.name || "Unknown Driver"} | {new Date(ride.date).toLocaleDateString("en-GB", {
+                          <span className="hidden md:inline">
+                            Driver: {ride.driverId?.name || "Unknown Driver"} |{" "}
+                          </span>
+                          {new Date(ride.date).toLocaleDateString("en-GB", {
                               day: "2-digit",
                               month: "short",
                               year: "numeric"
@@ -402,11 +430,14 @@ const PassengerHome = () => {
                       <span className="font-semibold">{ride.to}</span>
                     </div>
                     <div className="text-gray-600 dark:text-gray-400 text-sm mt-2 md:mt-0">
-                      Driver: {ride.driverId?.name || "Unknown Driver"} | {new Date(ride.date).toLocaleDateString("en-GB", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric"
-                            })} at {new Date(`1970-01-01T${ride.time}`).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                      <span className="hidden md:inline">
+                        Driver: {ride.driverId?.name || "Unknown Driver"} |{" "}
+                      </span>
+                      {new Date(ride.date).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric"
+                        })} at {new Date(`1970-01-01T${ride.time}`).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
                     </div>
                     <button
                       onClick={() => handleCancelRide(ride)}
@@ -443,13 +474,19 @@ const PassengerHome = () => {
                 <span className="font-semibold">{ride.to}</span>
               </div>
               <div className="text-gray-600 dark:text-gray-400 text-sm mt-2 md:mt-0">
-                Driver: {ride.driverId?.name || "Unknown Driver"} |  {new Date(ride.date).toLocaleDateString("en-GB", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric"
-                            })} at {new Date(`1970-01-01T${ride.time}`).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })} |{" "}
+                <span className="hidden md:inline">
+                  Driver: {ride.driverId?.name || "Unknown Driver"} |{" "}
+                </span>
+                {new Date(ride.date).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric"
+                  })} at {new Date(`1970-01-01T${ride.time}`).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })} |{" "}
                 <span className="font-bold text-[#04007f] dark:text-[#2fff75]">
-                  ₹{ride.passengers.find(p => p.passengerId === userId)?.farePaid.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                  ₹{ride.passengers
+                      .find(p => p.passengerId === userId)
+                      ?.farePaid.toFixed(2)
+                      .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                 </span>
               </div>
             </li>
@@ -574,8 +611,14 @@ const PassengerHome = () => {
                               </span>
                             </div>
                             <div className="flex justify-between items-center w-full">
-                              <span className="hidden sm:inline text-sm text-gray-600 dark:text-gray-400 truncate mt-1">{chat.lastMessage?.length > 35 ? chat.lastMessage.substring(0, 35) + "....." : chat.lastMessage}</span>
-                              <span className="sm:hidden text-sm text-gray-600 dark:text-gray-400 truncate mt-1">{chat.lastMessage?.length > 10 ? chat.lastMessage.substring(0, 10) + "....." : chat.lastMessage}</span>
+                              <span className={`hidden sm:inline text-sm truncate mt-1 
+                                ${chat.unreadCount > 0 ? 'font-bold text-gray-800 dark:text-gray-200' : 'text-gray-600 dark:text-gray-400'}`}>
+                                {chat.lastMessage?.length > 30 ? chat.lastMessage.substring(0, 30) + "....." : chat.lastMessage}
+                                </span>
+                              <span className={`sm:hidden text-sm truncate mt-1 
+                                ${chat.unreadCount > 0 ? 'font-bold text-gray-800 dark:text-gray-200' : 'text-gray-600 dark:text-gray-400'}`}>
+                                {chat.lastMessage?.length > 10 ? chat.lastMessage.substring(0, 10) + "....." : chat.lastMessage}
+                                </span>
                                <span className="sm:hidden text-xs text-gray-500 dark:text-gray-400">
                                 {(() => {
                                   if(!chat.lastMessageTime) return "";
@@ -604,6 +647,12 @@ const PassengerHome = () => {
                                   }
                                 })()}
                               </span>
+                              {/* ✅ Unread badge */} 
+                              {chat.unreadCount > 0 && ( 
+                                <span className="ml-2 flex items-center justify-center min-w-[20px] h-5 px-2 text-xs font-bold text-white bg-green-500 rounded-full"> 
+                                  {chat.unreadCount} 
+                                </span> 
+                              )}
                             </div>
                           </div>
                         </button>

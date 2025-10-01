@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import { FaRoute, FaCar, FaUser } from "react-icons/fa";
+import { FaRegCommentDots } from "react-icons/fa";
 
 const CancelRide = () => {
   const navigate = useNavigate();
@@ -74,7 +75,7 @@ const CancelRide = () => {
       {/* Ride Details */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 text-center max-w-lg w-full">
         <h2 className="text-3xl font-extrabold text-[#04007f] dark:text-[#2fff75] mb-4">
-          Cancel Ride
+          Booked Ride
         </h2>
         <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
           Review the ride details before canceling.
@@ -131,6 +132,18 @@ const CancelRide = () => {
                 </p>
               </div>
             </div>
+            <button
+              onClick={() => {
+                navigate("/passenger-home", {
+                  state: { openTab: "chats", driverId: ride.driverId._id}
+                });
+              }}
+              className=" text-xs font-semibold mb-3 flex items-center gap-1 px-3 py-2
+  text-white rounded-full bg-gradient-to-r from-blue-500 to-blue-700 shadow-md hover:from-blue-600 hover:to-blue-800
+active:scale-95 transition-all duration-300 ease-in-out">
+              <FaRegCommentDots className="w-4 h-4" />
+              Message
+            </button>
             <p className="text-gray-700 dark:text-gray-300">
               <FaCar className="inline mr-2" />
               <span className="font-semibold">Vehicle:</span> {ride.carModel}

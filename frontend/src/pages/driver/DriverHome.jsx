@@ -32,27 +32,6 @@ const DriverHome = () => {
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-      const [socket, setSocket] = useState(null);
-      // setup socket connection
-      useEffect(() => {
-        const newSocket = io("http://localhost:3000", {
-          auth: { token: localStorage.getItem("driverToken") },
-          transports: ["websocket", "polling"], // fallback
-        });
-
-        newSocket.on("connect", () => { 
-          console.log("✅ Connected to Socket.IO server:", newSocket.id);
-        });
-
-        newSocket.on("connect_error", (err) => {
-          console.error("❌ Socket.IO connection error:", err.message);
-        });
-
-        setSocket(newSocket);
-
-        // Cleanup on unmount
-        return () => newSocket.disconnect();
-      }, []);
 
       //Token Verify
       useEffect(() => {
@@ -224,11 +203,6 @@ const DriverHome = () => {
         fetchRideHistory();
       }, []);
 
-      //     NOTED ------------------------------------------------------(We needs to check this one needed or not!)
-      const handleChatSelect = (chat) => {
-        setChatToView(chat);
-      };
-
       const handleLogout = () => {
         setIsLogoutModalOpen(true);
       };
@@ -291,78 +265,150 @@ const DriverHome = () => {
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a0aec0'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
 
 
-//------------- Fetch all chat's -------------------------
-      const [chats, setChats] = useState([])
-      const [chatToView, setChatToView] = useState(null);
-      const [messageText, setMessageText] = useState("");
+ // -------------------- Socket Setup --------------------
+  const [socket, setSocket] = useState(null);
 
-        useEffect(() => {
-          const fetchChats = async () => {
-            try {
-              const res = await axios.get("http://localhost:3000/chat", {
-                headers: { Authorization: `Bearer ${localStorage.getItem("driverToken")}` }
-              });
-              setChats(res.data);
-            } catch (err) {
-              console.error("Error fetching chats:", err);
-            }
-          };
+  useEffect(() => {
+    const token = localStorage.getItem("driverToken");
+    if (!token) return;
 
-          if (!chatToView) {
-            fetchChats();
+    const newSocket = io("http://localhost:3000", {
+      auth: { token },
+      transports: ["websocket", "polling"],
+    });
+
+    newSocket.on("connect", () => {
+      console.log("✅ Driver connected to Socket.IO:", newSocket.id);
+    });
+
+    newSocket.on("connect_error", (err) => {
+      console.error("❌ Socket.IO connection error:", err.message);
+    });
+
+    setSocket(newSocket);
+    return () => {
+      newSocket.disconnect();
+      setSocket(null);
+    };
+  }, []);
+
+  // -------------------- Chat state --------------------
+  const [chats, setChats] = useState([]);
+  const [chatToView, setChatToView] = useState(null);
+  const [messageText, setMessageText] = useState("");
+
+  // ref to avoid stale closure in socket listener
+  const chatToViewRef = useRef(chatToView);
+  useEffect(() => {
+    chatToViewRef.current = chatToView;
+  }, [chatToView]);
+
+  // Fetch chats
+  useEffect(() => {
+    const fetchChats = async () => {
+      try {
+        const res = await axios.get("http://localhost:3000/chat", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("driverToken")}` },
+        });
+        // add unread false by default
+        const chatsWithUnread = res.data.map((c) => ({ ...c, unread: false }));
+        setChats(chatsWithUnread);
+      } catch (err) {
+        console.error("Error fetching chats:", err);
+      }
+    };
+
+    // only fetch when not viewing a single chat
+    if (!chatToView) fetchChats();
+  }, [chatToView]);
+
+  // When socket & chats are ready, join rooms for all chat partners so driver receives messages even if the chat isn't open
+  useEffect(() => {
+    if (!socket || !chats || chats.length === 0) return;
+    chats.forEach((c) => {
+      const otherId = c.passenger?._id;
+      if (otherId) socket.emit("joinChat", { otherUserId: otherId });
+    });
+  }, [socket, chats]);
+
+  // socket listener for incoming messages
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleReceiveMessage = (msg) => {
+  const currentChat = chatToViewRef.current;
+
+  // If viewing this chat, no unread
+  const isUnread = currentChat?.passenger?._id !== msg.senderId;
+
+  setChats(prevChats =>
+    prevChats.map(c =>
+      c.passenger?._id === msg.senderId
+        ? {
+            ...c,
+            lastMessage: msg.text,
+            lastMessageTime: msg.time,
+            unreadCount: isUnread ? (c.unreadCount || 0) + 1 : 0,
           }
-        }, [chatToView]);
+        : c
+    )
+  );
 
-        // Join chat room & listen for messages
-        useEffect(() => {
-          if (!chatToView) return;
-          const otherUserId = chatToView.passenger._id;
-          socket.emit("joinChat", { otherUserId });
+  // Append to messages if this chat is open
+  if (!isUnread) {
+    setChatToView(prev => ({
+      ...prev,
+      messages: [...(prev?.messages || []), msg],
+    }));
+  }
+};
 
-          socket.on("receiveMessage", (msg) => {
-            if (msg.senderId === otherUserId || msg.sender === "passenger") {
-              setChatToView(prev => ({ ...prev, messages: [...prev.messages, msg] }));
-              setChats(prev => prev.map(c => c.passenger._id === otherUserId ? { ...c, lastMessage: msg.text, lastMessageTime: msg.time } : c));
-            }
-          });
 
-          return () => socket.off("receiveMessage");
-        }, [chatToView]);
+    socket.on("receiveMessage", handleReceiveMessage);
+    return () => socket.off("receiveMessage", handleReceiveMessage);
+  }, [socket]);
 
-        const sendMessage = () => {
-          if (!messageText.trim()) return;
+  // send message
+  const sendMessage = () => {
+    if (!messageText.trim() || !chatToView?.passenger?._id || !socket) return;
 
-          const newMsg = {
-            text: messageText,
-            sender: "driver",
-            time: new Date().toISOString() ,
-            _id: Date.now(),
-            senderId: userId
-          };
+    const newMsg = {
+      text: messageText,
+      sender: "driver",
+      time: new Date().toISOString(),
+      _id: Date.now(),
+      senderId: userId,
+    };
 
-          // Update current chat view
-          setChatToView(prev => ({
-            ...prev,
-            messages: [...prev.messages, newMsg]
-          }));
+    // append locally
+    setChatToView((prev) => ({
+      ...prev,
+      messages: [...(prev?.messages || []), newMsg],
+    }));
 
-          // Update chats preview list immediately
-          setChats(prevChats =>
-            prevChats.map(c =>
-              c.passenger._id === chatToView.passenger._id
-                ? { ...c, lastMessage: newMsg.text, lastMessageTime: newMsg.time }
-                : c
-            )
-          );
+    // update preview
+    setChats((prevChats) =>
+      prevChats.map((c) =>
+        c.passenger?._id === chatToView.passenger._id
+          ? { ...c, lastMessage: newMsg.text, lastMessageTime: newMsg.time, unread: false }
+          : c
+      )
+    );
 
-          // Emit socket for real-time
-          socket.emit("sendMessage", {
-            text: messageText,
-            otherUserId: chatToView.passenger._id
-          });
+    // emit to server (server will compute room and broadcast)
+    socket.emit("sendMessage", {
+      text: messageText,
+      otherUserId: chatToView.passenger._id,
+    });
 
-          setMessageText("");
-        };
+    setMessageText("");
+  };
+// -------------------- Handle Chat Select -------------------- 
+    const handleChatSelect = (chat) =>
+      { setChatToView(chat); // Reset unread when opening a chat 
+        setChats((prevChats) => prevChats.map((c) => 
+          c.passenger._id === chat.passenger._id ? { ...c, unreadCount: 0  } : c ) ); 
+      };
 //---------------------------------------------------------
 
 //------------------ This All for messages -----------------
@@ -483,12 +529,12 @@ const DriverHome = () => {
 
                 <div className="flex flex-col items-end">
                   <span className="text-lg font-bold text-gray-800 dark:text-gray-200">
-                    {ride.totalSeats - ride.availableSeats} of {ride.totalSeats}{" "}
+                    <i className="fas fa-couch mr-1 text-gray-700 text-base"></i> {ride.totalSeats - ride.availableSeats} of {ride.totalSeats}{" "}
                     seats booked
                   </span>
 
                   {ride.passengers?.length > 0 && (
-                    <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="mt-2 text-sm text-gray-500 dark:text-gray-400 hidden md:inline">
                       Passengers:{" "}
                       {ride.passengers
                         ?.map((p) => p?.passengerId?.name ?? "Unknown")
@@ -761,8 +807,14 @@ const DriverHome = () => {
                               </span>
                             </div>
                             <div className="flex justify-between items-center w-full">
-                              <span className="hidden sm:inline text-sm text-gray-600 dark:text-gray-400 truncate mt-1">{chat.lastMessage?.length > 35 ? chat.lastMessage.substring(0, 35) + "....." : chat.lastMessage}</span>
-                              <span className="sm:hidden text-sm text-gray-600 dark:text-gray-400 truncate mt-1">{chat.lastMessage?.length > 10 ? chat.lastMessage.substring(0, 10) + "....." : chat.lastMessage}</span>
+                              <span className={`hidden sm:inline text-sm truncate mt-1 
+                                ${chat.unreadCount > 0 ? 'font-bold text-gray-800 dark:text-gray-200' : 'text-gray-600 dark:text-gray-400'}`}>
+                                {chat.lastMessage?.length > 30 ? chat.lastMessage.substring(0, 30) + "....." : chat.lastMessage}
+                                </span>
+                              <span className={`sm:hidden text-sm truncate mt-1 
+                                ${chat.unreadCount > 0 ? 'font-bold text-gray-800 dark:text-gray-200' : 'text-gray-600 dark:text-gray-400'}`}>
+                                {chat.lastMessage?.length > 10 ? chat.lastMessage.substring(0, 10) + "....." : chat.lastMessage}
+                                </span>
                                <span className="sm:hidden text-xs text-gray-500 dark:text-gray-400">
                                 {(() => {
                                   if(!chat.lastMessageTime) return "";
@@ -791,6 +843,12 @@ const DriverHome = () => {
                                   }
                                 })()}
                               </span>
+                              {/* ✅ Unread badge */} 
+                              {chat.unreadCount > 0 && ( 
+                                <span className="ml-2 flex items-center justify-center min-w-[20px] h-5 px-2 text-xs font-bold text-white bg-green-500 rounded-full"> 
+                                  {chat.unreadCount} 
+                                </span> 
+                              )}
                             </div>
                           </div>
                         </button>

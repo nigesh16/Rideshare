@@ -1,15 +1,8 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import {
-  Calendar,
-  Clock,
-  Car,
-  Users,
-  Ticket,
-  CheckCircle,
-  Award,
-  X,
-} from "lucide-react";
+import { Calendar, Clock, Car, Users, Ticket, CheckCircle, Award, X,Ruler} from "lucide-react";
+import { FaRegCommentDots } from "react-icons/fa";
+
 
 const defaultProfilePic =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a0aec0'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
@@ -85,32 +78,33 @@ const HistoryRide = () => {
   const passengerCount = ride.passengers ? ride.passengers.length : 0;
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-6 flex justify-center">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-3xl w-full">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 sm:p-6 flex justify-center">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 sm:p-8 max-w-3xl w-full">
+        
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#04007f] dark:text-[#2fff75]">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#04007f] dark:text-[#2fff75]">
             Completed Ride
           </h2>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 px-3 py-1 rounded-full">
-              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-              <span className="text-sm font-semibold text-green-700 dark:text-green-300">
+
+          <div className="flex flex-wrap sm:flex-row items-center gap-2 sm:gap-3 mt-2 sm:mt-0">
+            <div className="flex items-center gap-1 sm:gap-2 bg-green-50 dark:bg-green-900/20 px-2 sm:px-3 py-1 rounded-full">
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
+              <span className="text-xs sm:text-sm font-semibold text-green-700 dark:text-green-300">
                 Completed
               </span>
             </div>
-            <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 px-3 py-1 rounded-full">
-              <Award className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+            <div className="flex items-center gap-1 sm:gap-2 bg-yellow-50 dark:bg-yellow-900/20 px-2 sm:px-3 py-1 rounded-full">
+              <Award className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600 dark:text-yellow-400" />
               <div className="text-right">
-                <div className="text-xs text-gray-500 dark:text-gray-400">
+                <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
                   Earnings
                 </div>
-                <div className="font-bold">₹{formatCurrency(totalEarnings)}</div>
+                <div className="font-bold text-sm sm:text-base">₹{formatCurrency(totalEarnings)}</div>
               </div>
             </div>
           </div>
         </div>
-
         {/* Trip & Car Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-gray-50 dark:bg-gray-700 p-5 rounded-xl shadow-md space-y-2">
@@ -128,6 +122,9 @@ const HistoryRide = () => {
             </p>
             <p className="flex items-center gap-1">
               <Clock className="w-4 h-4" /> {new Date(`1970-01-01T${ride.time}`).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+            </p>
+            <p className="flex items-center gap-1">
+              <Ruler className="w-4 h-4" /> Distance: {formatCurrency(ride.distanceKm)} km
             </p>
             <p className="flex items-center gap-1">
               <Ticket className="w-4 h-4" /> Fare per Seat: ₹{formatCurrency(ride.fare)}
@@ -243,6 +240,17 @@ const HistoryRide = () => {
                     <p className="text-sm">
                       Fare Paid: ₹{formatCurrency(Number(farePaid) || 0)}
                     </p>
+                    <button
+                  onClick={() => {
+                    navigate("/driver-home", {
+                      state: { openTab: "chats", passengerId: selectedPassenger.passengerId._id}
+                    });
+                  }}
+                  className="mt-4 flex items-center gap-2 px-4 py-2 bg-[#04007f] text-white rounded-full shadow-md hover:bg-[#4747b3]"
+                >
+                  <FaRegCommentDots className="w-5 h-5" />
+                  Message
+                </button>
                   </div>
                 );
               })()}

@@ -2,6 +2,7 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AiOutlineCheckCircle } from "react-icons/ai";
 import { FaRoute, FaCar, FaUser } from "react-icons/fa";
+import { FaRegCommentDots } from "react-icons/fa";
 
 const RideHistory = () => {
   const navigate = useNavigate();
@@ -47,7 +48,7 @@ const RideHistory = () => {
               })}
             </li>
             <li>
-              <span className="font-semibold">Distance:</span> {ride.distanceKm} km
+              <span className="font-semibold">Distance:</span> {ride.distanceKm.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} km
             </li>
             <li>
               <span className="font-semibold">Seats Booked:</span>{" "}
@@ -88,6 +89,18 @@ const RideHistory = () => {
             </div>
           </div>
           <div className="text-gray-700 dark:text-gray-300 space-y-1">
+            <button
+              onClick={() => {
+                navigate("/passenger-home", {
+                  state: { openTab: "chats", driverId: ride.driverId._id}
+                });
+              }}
+              className=" text-xs font-semibold mb-3 flex items-center gap-1 px-3 py-2
+  text-white rounded-full bg-gradient-to-r from-blue-500 to-blue-700 shadow-md hover:from-blue-600 hover:to-blue-800
+active:scale-95 transition-all duration-300 ease-in-out">
+              <FaRegCommentDots className="w-4 h-4" />
+              Message
+            </button>
             <p>
               <FaCar className="inline mr-2" />
               <span className="font-semibold">Vehicle:</span> {ride.carModel}

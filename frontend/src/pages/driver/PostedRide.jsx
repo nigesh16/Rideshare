@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Calendar, Clock, Car, Users, Ticket, CheckCircle, X } from "lucide-react";
+import { Calendar, Clock, Car, Users, Ticket, CheckCircle, X, Ruler } from "lucide-react";
 import { FaRegCommentDots } from "react-icons/fa";
 
 const PostedRide = () => {
@@ -53,6 +53,9 @@ const PostedRide = () => {
             <p><span className="font-semibold">Date:</span> {formattedDate}</p>
             <p className="flex items-center gap-1">
               <Clock className="w-4 h-4" /> {new Date(`1970-01-01T${ride.time}`).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+            </p>
+            <p className="flex items-center gap-1">
+              <Ruler className="w-4 h-4" /> Distance: {ride.distanceKm.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} km
             </p>
             <p className="flex items-center gap-1">
               <Ticket className="w-4 h-4" /> Fare per Seat: ₹{ride.fare.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
@@ -127,7 +130,7 @@ const PostedRide = () => {
                       state: { openTab: "chats", passengerId: selectedPassenger.passengerId._id}
                     });
                   }}
-                  className="mt-4 flex items-center gap-2 px-4 py-2 bg-[#04007f] text-white rounded-full shadow-md hover:bg-[#5252c3]"
+                  className="mt-4 flex items-center gap-2 px-4 py-2 bg-[#04007f] text-white rounded-full shadow-md hover:bg-[#4747b3]"
                 >
                   <FaRegCommentDots className="w-5 h-5" />
                   Message

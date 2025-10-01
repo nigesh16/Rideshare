@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import axios from "axios";
 import { toast,ToastContainer } from "react-toastify";
 import { FaRoute, FaCar, FaUser } from "react-icons/fa";
+import { FaRegCommentDots } from "react-icons/fa";
 
 const ConfirmRide = () => {
   const navigate = useNavigate();
@@ -150,7 +151,7 @@ const ConfirmRide = () => {
           {/* Driver Info */}
           <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-xl shadow-inner">
             <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-              <FaUser /> Driver & Vehicle
+              <FaUser /> Driver & Vehicle 
             </h3>
             <div className="flex items-center gap-4 mb-4">
               <img
@@ -174,6 +175,18 @@ const ConfirmRide = () => {
                 </p>
               </div>
             </div>
+            <button
+              onClick={() => {
+                navigate("/passenger-home", {
+                  state: { openTab: "chats", driverId: ride.driverId._id}
+                });
+              }}
+              className=" text-xs font-semibold mb-3 flex items-center gap-1 px-3 py-2
+  text-white rounded-full bg-gradient-to-r from-blue-500 to-blue-700 shadow-md hover:from-blue-600 hover:to-blue-800
+ transition-all duration-300 ease-in-out">
+              <FaRegCommentDots className="w-4 h-4" />
+              Message
+            </button>
             <p className="text-gray-700 dark:text-gray-300">
               <FaCar className="inline mr-2" />
               <span className="font-semibold">Vehicle:</span>{" "}{ride.carModel}

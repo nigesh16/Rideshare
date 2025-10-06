@@ -5,6 +5,12 @@ import axios from "axios";
 import io from "socket.io-client";
 import { TbArrowRight } from "react-icons/tb"; 
 import { FaTrash } from "react-icons/fa"; 
+//for dropdownlist
+import { Menu, Transition } from "@headlessui/react";
+import { Fragment } from "react";
+import { ChevronDownIcon } from "@heroicons/react/24/solid";
+//for reset rotate
+import { FiRefreshCw  } from "react-icons/fi";
 
 const PassengerHome = () => {
   const navigate = useNavigate(); 
@@ -15,6 +21,19 @@ const PassengerHome = () => {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [isMenuOpen, setIsMenuOpen] = useState(false); // New state for mobile menu
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false); // New state for logout confirmation modal
+  //for history ride (dropdownlist)
+  const [UsortOrder, setUSortOrder] = useState("newest");
+  //for booked ride (dropdownlist)
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [sortOrder, setSortOrder] = useState("newest"); 
+  //for history ride (dropdownlist)
+  const [hsortOrder, setHSortOrder] = useState("newest");
+  //for searching ride
+  const [searchFrom, setSearchFrom] = useState("");
+  const [searchTo, setSearchTo] = useState("");
+  const [searchDate, setSearchDate] = useState("");
+  const [searchApplied, setSearchApplied] = useState(false);
+  const [resetRotating, setResetRotating] = useState(false);
 
       // Verify Token
       useEffect(() => {
@@ -105,8 +124,14 @@ const PassengerHome = () => {
       };
 
       //for CancelRide.jsx
-      const handleCancelRide = (ride) => {
-        navigate('/passenger/cancel-ride', { state: { ride, passengerId: userId  } });
+      const handleCancelRide = (ride, booking) => {
+        navigate('/passenger/cancel-ride', { 
+          state: { 
+            ride, 
+            passengerId: userId, 
+            booking 
+          } 
+        });
       };
 
       //for HistoryRide.jsx
@@ -123,7 +148,7 @@ const PassengerHome = () => {
       };
 
       const confirmLogout = () => {
-        localStorage.removeItem("token");
+        localStorage.removeItem("passengerToken");
         setIsLogoutModalOpen(false);
         setIsMenuOpen(false); // Close menu after logout
         navigate('/');
@@ -372,131 +397,481 @@ const [messageText, setMessageText] = useState("");
         }
       }, [location.state, chats]); 
 
-
-//------------------------------------------------------------
-
+//----------- for searching rides -------------
+    const handleSearch = () => {
+      setSearchApplied(true);
+    };
+    const handleResetSearch = () => {
+      setSearchFrom("");
+      setSearchTo("");
+      setSearchDate("");
+      setSearchApplied(false);
+        // Trigger rotation animation
+      setResetRotating(true);
+      setTimeout(() => setResetRotating(false), 500); 
+    };
+//----------------------------------------------
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'upcoming':
+      case 'upcoming': {
+        // 🔥 Sort upcoming rides based on combined date + time
+        const sortedUpcoming = [...upcomingRides].sort((a, b) => {
+          const [hourA, minA] = a.time.split(":").map(Number);
+          const [hourB, minB] = b.time.split(":").map(Number);
+
+          const dateTimeA = new Date(a.date);
+          dateTimeA.setHours(hourA, minA, 0, 0);
+
+          const dateTimeB = new Date(b.date);
+          dateTimeB.setHours(hourB, minB, 0, 0);
+
+          return UsortOrder === "newest" ? dateTimeA - dateTimeB : dateTimeB - dateTimeA;
+        });
+
+        // 🔍 Filter only if search is applied
+        const filteredUpcoming = searchApplied
+        ? upcomingRides.filter((ride) => {
+            const matchesFrom = searchFrom
+              ? ride.from.toLowerCase().includes(searchFrom.toLowerCase())
+              : true;
+            const matchesTo = searchTo
+              ? ride.to.toLowerCase().includes(searchTo.toLowerCase())
+              : true;
+            const matchesDate = searchDate
+              ? new Date(ride.date).toISOString().split("T")[0] === searchDate
+              : true;
+            return matchesFrom && matchesTo && matchesDate;
+          })
+        : upcomingRides;
+
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
-            <h3 className="text-2xl font-bold text-[#04007f] dark:text-[#2fff75] mb-4">Upcoming Rides</h3>
-            {upcomingRides.length > 0 ? (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 mb-8">
+            {/* Header + Sort Dropdown */}
+            <div className="flex justify-between items-center mb-4 gap-2 flex-wrap md:flex-nowrap">
+              <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-[#04007f] dark:text-[#2fff75]">
+                Upcoming Rides
+              </h3>
+
+              {/* Sort Dropdown */}
+              <Menu as="div" className="relative">
+                <Menu.Button className="inline-flex justify-between items-center w-auto rounded-full bg-gray-100 dark:bg-gray-700 px-3 py-1 sm:px-4 sm:py-1 text-xs sm:text-sm md:text-base font-medium text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+                  Sort: {UsortOrder === "newest" ? "Nearest" : "Oldest"}
+                  <ChevronDownIcon className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
+                </Menu.Button>
+
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-100"
+                  enterFrom="transform opacity-0 scale-95"
+                  enterTo="transform opacity-100 scale-100"
+                  leave="transition ease-in duration-75"
+                  leaveFrom="transform opacity-100 scale-100"
+                  leaveTo="transform opacity-0 scale-95"
+                >
+                  <Menu.Items className="absolute right-0 mt-2 w-36 origin-top-right rounded-xl bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                    {[
+                      { value: "newest", label: "Nearest → Oldest" },
+                      { value: "oldest", label: "Oldest → Nearest" },
+                    ].map((option) => (
+                      <Menu.Item key={option.value}>
+                        {({ active }) => (
+                          <button
+                            className={`${
+                              active ? "bg-blue-100 dark:bg-blue-900" : ""
+                            } w-full text-left px-4 py-2 text-sm text-gray-800 dark:text-gray-200 rounded-lg`}
+                            onClick={() => setUSortOrder(option.value)}
+                          >
+                            {option.label}
+                          </button>
+                        )}
+                      </Menu.Item>
+                    ))}
+                  </Menu.Items>
+                </Transition>
+              </Menu>
+            </div>
+
+            {/* Ride List */}
+            {filteredUpcoming.length > 0 ? (
               <ul className="space-y-4">
-                {upcomingRides.map(ride => (
+                {filteredUpcoming.map((ride) => (
                   <li key={ride._id}>
-                    <button onClick={() => handleRideSelect(ride)} className="w-full text-left bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200">
-                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-                        <div className="text-lg font-medium text-gray-800 dark:text-gray-200 flex items-center space-x-2">
+                    <button
+                      onClick={() => handleRideSelect(ride)}
+                      className="w-full text-left bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200"
+                    >
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                        <div className="text-base sm:text-lg font-medium text-gray-800 dark:text-gray-200 flex items-center space-x-2 w-full md:w-auto">
                           <span className="font-semibold">{ride.from}</span>
                           <TbArrowRight className="text-lg text-gray-500" />
                           <span className="font-semibold">{ride.to}</span>
                         </div>
-                        <div className="text-gray-600 dark:text-gray-400 text-sm mt-2 md:mt-0">
+
+                        <div className="text-gray-600 dark:text-gray-400 text-sm sm:text-base w-full md:w-auto flex flex-wrap gap-1 sm:gap-2 mt-1 md:mt-0">
                           <span className="hidden md:inline">
-                            Driver: {ride.driverId?.name || "Unknown Driver"} |{" "}
+                            Driver: {ride.driverId?.name || "Unknown Driver"} |
                           </span>
-                          {new Date(ride.date).toLocaleDateString("en-GB", {
+                          <span>
+                            {new Date(ride.date).toLocaleDateString("en-GB", {
                               day: "2-digit",
                               month: "short",
-                              year: "numeric"
-                            })} at {new Date(`1970-01-01T${ride.time}`).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                              year: "numeric",
+                            })}
+                          </span>
+                          <span>
+                            at{" "}
+                            {new Date(`1970-01-01T${ride.time}`).toLocaleTimeString("en-US", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
                         </div>
                       </div>
-                      <div className="mt-2 text-gray-600 dark:text-gray-400 text-sm">
-                        <i className="fas fa-couch mr-1"></i> {ride.totalSeats - ride.availableSeats} of {ride.totalSeats} seats booked
+
+                      {/* Seats booked on next line with color */}
+                      <div className="mt-2 font-bold text-[#04007f] dark:text-[#2fff75] text-sm flex items-center">
+                        <i className="fas fa-couch mr-1"></i>
+                        {ride.totalSeats - ride.availableSeats} of {ride.totalSeats} seats booked
                       </div>
                     </button>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-center text-gray-500 dark:text-gray-400">There are no upcoming rides available at this time.</p>
+              <p className="text-center text-gray-500 dark:text-gray-400 text-sm sm:text-base">
+                {searchApplied ? "No upcoming rides match your search." : "There are no upcoming rides available at this time."}
+              </p>
             )}
           </div>
         );
-      case 'booked':
-        return (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
-            <h3 className="text-2xl font-bold text-[#04007f] dark:text-[#2fff75] mb-4">My Booked Rides</h3>
-            {myBookedRides.length > 0 ? (
-              <ul className="space-y-4">
-                {myBookedRides.map(ride => (
-                  <li key={ride._id} className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm flex flex-col md:flex-row justify-between items-center">
-                    <div className="text-lg font-medium text-gray-800 dark:text-gray-200 flex items-center space-x-2">
-                      <span className="font-semibold">{ride.from}</span> 
-                      <TbArrowRight className="text-lg text-gray-500" />
-                      <span className="font-semibold">{ride.to}</span>
-                    </div>
-                    <div className="text-gray-600 dark:text-gray-400 text-sm mt-2 md:mt-0">
-                      <span className="hidden md:inline">
-                        Driver: {ride.driverId?.name || "Unknown Driver"} |{" "}
-                      </span>
-                      {new Date(ride.date).toLocaleDateString("en-GB", {
+      }
+      case "booked": {
+      const rideRequests = myBookedRides.flatMap(ride =>
+        ride.passengers.map(p => ({
+          rideId: ride._id,
+          from: ride.from,
+          to: ride.to,
+          date: ride.date,
+          time: ride.time,
+          driver: ride.driverId?.name || "Unknown Driver",
+          seatsBooked: p.seatsBooked,
+          status: p.status,
+          booking: p,
+          originalRide: ride,
+          bookedAt: p.bookedAt || p.requestedAt || ride.createdAt,
+        }))
+      );
+
+      const sortedRides = [...rideRequests].sort((a, b) =>
+        sortOrder === "newest"
+          ? new Date(b.bookedAt) - new Date(a.bookedAt)
+          : new Date(a.bookedAt) - new Date(b.bookedAt)
+      );
+
+      const filteredRides = (() => {
+        if (filterStatus === "all") return sortedRides;
+        if (filterStatus === "driverCanceled") {
+          return sortedRides.filter(
+            r => r.originalRide?.status === "canceled" && r.status === "accepted"
+          );
+        }
+        if (filterStatus === "canceled") {
+          return sortedRides.filter(
+            r => r.status === "canceled" && r.originalRide?.status !== "canceled"
+          );
+        }
+        return sortedRides.filter(
+          r => r.status === filterStatus && r.originalRide?.status !== "canceled"
+        );
+      })();
+
+      return (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 mb-8">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-3">
+            {/* Title */}
+            <h3 className="text-xl sm:text-2xl font-bold text-[#04007f] dark:text-[#2fff75] text-center md:text-left flex-1">
+              My Booked Rides
+            </h3>
+
+            {/* Sort + Filter row */}
+            <div className="flex justify-center md:justify-end gap-3 flex-wrap">
+              {/* Sort Dropdown */}
+              <Menu as="div" className="relative">
+                <Menu.Button className="inline-flex justify-center items-center rounded-full bg-gray-100 dark:bg-gray-700 px-4 py-1 text-sm font-medium text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+                  Sort: {sortOrder === "newest" ? "Newest" : "Oldest"}
+                  <ChevronDownIcon className="w-4 h-4 ml-2" />
+                </Menu.Button>
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-100"
+                  enterFrom="transform opacity-0 scale-95"
+                  enterTo="transform opacity-100 scale-100"
+                  leave="transition ease-in duration-75"
+                  leaveFrom="transform opacity-100 scale-100"
+                  leaveTo="transform opacity-0 scale-95"
+                >
+                  <Menu.Items className="absolute right-0 mt-2 w-36 origin-top-right rounded-xl bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                    {[
+                      { label: "Newest First", value: "newest" },
+                      { label: "Oldest First", value: "oldest" },
+                    ].map(option => (
+                      <Menu.Item key={option.value}>
+                        {({ active }) => (
+                          <button
+                            className={`${
+                              active ? "bg-blue-100 dark:bg-blue-900" : ""
+                            } w-full text-left px-4 py-2 text-sm text-gray-800 dark:text-gray-200 rounded-lg`}
+                            onClick={() => setSortOrder(option.value)}
+                          >
+                            {option.label}
+                          </button>
+                        )}
+                      </Menu.Item>
+                    ))}
+                  </Menu.Items>
+                </Transition>
+              </Menu>
+
+              {/* Filter Dropdown */}
+              <Menu as="div" className="relative">
+                <Menu.Button className="inline-flex justify-center items-center rounded-full bg-gray-100 dark:bg-gray-700 px-4 py-1 text-sm font-medium text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+                  {filterStatus === "driverCanceled"
+                    ? "Driver Canceled"
+                    : filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)}
+                  <ChevronDownIcon className="w-4 h-4 ml-2" />
+                </Menu.Button>
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-100"
+                  enterFrom="transform opacity-0 scale-95"
+                  enterTo="transform opacity-100 scale-100"
+                  leave="transition ease-in duration-75"
+                  leaveFrom="transform opacity-100 scale-100"
+                  leaveTo="transform opacity-0 scale-95"
+                >
+                  <Menu.Items className="absolute right-0 mt-2 w-44 origin-top-right rounded-xl bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                    {["all", "accepted", "pending", "rejected", "canceled", "driverCanceled"].map(option => (
+                      <Menu.Item key={option}>
+                        {({ active }) => (
+                          <button
+                            className={`${
+                              active ? "bg-blue-100 dark:bg-blue-900" : ""
+                            } w-full text-left px-4 py-2 text-sm text-gray-800 dark:text-gray-200 rounded-lg`}
+                            onClick={() => setFilterStatus(option)}
+                          >
+                            {option === "driverCanceled"
+                              ? "Driver Canceled"
+                              : option.charAt(0).toUpperCase() + option.slice(1)}
+                          </button>
+                        )}
+                      </Menu.Item>
+                    ))}
+                  </Menu.Items>
+                </Transition>
+              </Menu>
+            </div>
+          </div>
+
+          {/* Rides List */}
+          {filteredRides.length > 0 ? (
+            <ul className="space-y-4">
+              {filteredRides.map((req, index) => {
+                const isDriverCanceled = req.originalRide?.status === "canceled";
+                const blurClass = isDriverCanceled ? "line-through opacity-80" : "";
+
+                let statusColor = "";
+                switch (req.status) {
+                  case "accepted":
+                    statusColor = "bg-green-100 text-green-800";
+                    break;
+                  case "rejected":
+                    statusColor = "bg-red-100 text-red-800";
+                    break;
+                  case "pending":
+                    statusColor = "bg-yellow-100 text-yellow-800";
+                    break;
+                  case "canceled":
+                    statusColor = "bg-gray-100 text-gray-800";
+                    break;
+                  default:
+                    statusColor = "bg-gray-100 text-gray-800";
+                }
+
+                return (
+                  <li
+                    key={`${req.rideId}-${index}`}
+                    className={`bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm flex flex-col sm:flex-col md:flex-row md:justify-between md:items-center gap-3 ${
+                      isDriverCanceled ? "opacity-90" : ""
+                    }`}
+                  >
+                    <div className="flex flex-col gap-1">
+                      <div className={`text-base sm:text-lg font-medium text-gray-800 dark:text-gray-200 flex items-center space-x-2 ${blurClass}`}>
+                        <span className="font-semibold">{req.from}</span>
+                        <TbArrowRight className="text-lg text-gray-500" />
+                        <span className="font-semibold">{req.to}</span>
+                      </div>
+                      <div className={`text-gray-600 dark:text-gray-400 text-sm ${blurClass}`}>
+                        Driver: {req.driver} |{" "}
+                        {new Date(req.date).toLocaleDateString("en-GB", {
                           day: "2-digit",
                           month: "short",
-                          year: "numeric"
-                        })} at {new Date(`1970-01-01T${ride.time}`).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                          year: "numeric",
+                        })}{" "}
+                        at{" "}
+                        {new Date(`1970-01-01T${req.time}`).toLocaleTimeString(
+                          "en-US",
+                          { hour: "2-digit", minute: "2-digit" }
+                        )}
+                      </div>
                     </div>
-                    <button
-                      onClick={() => handleCancelRide(ride)}
-                      className="mt-4 md:mt-0 px-4 py-2 bg-green-600 text-white font-bold rounded-full text-sm shadow-lg hover:bg-green-700 transition-colors"
-                    >
-                      View Ride
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-center text-gray-500 dark:text-gray-400">You have no booked rides yet.</p>
-            )}
-          </div>
-        );
-      case 'history':
-        return (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-      <h3 className="text-2xl font-bold text-[#04007f] dark:text-[#2fff75] mb-4">
-        Ride History
-      </h3>
 
-      {rideHistory.length > 0 ? (
-        <ul className="space-y-4">
-          {rideHistory.map((ride) => (
-            <li
-              key={ride._id}
-              className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm flex flex-col md:flex-row justify-between items-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-              onClick={() => handleViewHistory(ride)}
-            >
-              <div className="text-lg font-medium text-gray-800 dark:text-gray-200 flex items-center space-x-2">
-                <span className="font-semibold">{ride.from}</span>
-                <TbArrowRight className="text-lg text-gray-500" />
-                <span className="font-semibold">{ride.to}</span>
-              </div>
-              <div className="text-gray-600 dark:text-gray-400 text-sm mt-2 md:mt-0">
-                <span className="hidden md:inline">
-                  Driver: {ride.driverId?.name || "Unknown Driver"} |{" "}
-                </span>
-                {new Date(ride.date).toLocaleDateString("en-GB", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric"
-                  })} at {new Date(`1970-01-01T${ride.time}`).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })} |{" "}
-                <span className="font-bold text-[#04007f] dark:text-[#2fff75]">
-                  ₹{ride.passengers
-                      .find(p => p.passengerId === userId)
-                      ?.farePaid.toFixed(2)
-                      .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-                </span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-center text-gray-500 dark:text-gray-400">You have no ride history.</p>
-      )}
-    </div>
-        );   
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                      {isDriverCanceled ? (
+                        <span className="px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
+                          Driver Canceled Ride ({req.seatsBooked}{" "}
+                          {req.seatsBooked > 1 ? "seats" : "seat"})
+                        </span>
+                      ) : (
+                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${statusColor}`}>
+                          {req.status.charAt(0).toUpperCase() + req.status.slice(1)} ({req.seatsBooked}{" "}
+                          {req.seatsBooked > 1 ? "seats" : "seat"})
+                        </span>
+                      )}
+                      <button
+                        onClick={() => handleCancelRide(req.originalRide, req.booking)}
+                        className={`w-full sm:w-auto px-4 py-2 font-bold rounded-full text-sm shadow-lg transition-colors ${
+                          isDriverCanceled
+                            ? "bg-red-200 text-red-800 hover:bg-red-300"
+                            : "bg-blue-600 text-white hover:bg-blue-700"
+                        }`}
+                      >
+                        View Ride
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="text-center text-gray-500 dark:text-gray-400">
+              You have no booked rides yet.
+            </p>
+          )}
+        </div>
+      );
+      }
+      case "history": {
+      const sortedHistory = [...rideHistory].sort((a, b) => {
+        return hsortOrder === "newest"
+          ? new Date(b.date) - new Date(a.date)
+          : new Date(a.date) - new Date(b.date);
+      });
+
+      return (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 mb-8">
+          {/* Header + Sort Dropdown */}
+          <div className="flex flex-wrap justify-between items-center mb-4 gap-3">
+            <h3 className="text-xl sm:text-2xl font-bold text-[#04007f] dark:text-[#2fff75]">
+              Ride History
+            </h3>
+
+            {/* Sort Dropdown */}
+            <Menu as="div" className="relative">
+              <Menu.Button className="inline-flex justify-between items-center w-auto rounded-full bg-gray-100 dark:bg-gray-700 px-4 py-1 text-sm font-medium text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+                Sort: {hsortOrder === "newest" ? "Newest" : "Oldest"}
+                <ChevronDownIcon className="w-4 h-4 ml-2" />
+              </Menu.Button>
+              <Transition
+                as={Fragment}
+                enter="transition ease-out duration-100"
+                enterFrom="transform opacity-0 scale-95"
+                enterTo="transform opacity-100 scale-100"
+                leave="transition ease-in duration-75"
+                leaveFrom="transform opacity-100 scale-100"
+                leaveTo="transform opacity-0 scale-95"
+              >
+                <Menu.Items className="absolute right-0 mt-2 w-36 origin-top-right rounded-xl bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                  {[
+                    { value: "newest", label: "Newest → Oldest" },
+                    { value: "oldest", label: "Oldest → Newest" },
+                  ].map((option) => (
+                    <Menu.Item key={option.value}>
+                      {({ active }) => (
+                        <button
+                          className={`${
+                            active ? "bg-blue-100 dark:bg-blue-900" : ""
+                          } w-full text-left px-4 py-2 text-sm text-gray-800 dark:text-gray-200 rounded-lg`}
+                          onClick={() => setHSortOrder(option.value)}
+                        >
+                          {option.label}
+                        </button>
+                      )}
+                    </Menu.Item>
+                  ))}
+                </Menu.Items>
+              </Transition>
+            </Menu>
+          </div>
+
+          {/* Ride List */}
+          {sortedHistory.length > 0 ? (
+            <ul className="space-y-4">
+              {sortedHistory.map((ride) => {
+                const passenger = ride.passengers.find(p => p.passengerId === userId);
+                const fare = passenger?.farePaid || 0;
+
+                return (
+                  <li
+                    key={ride._id}
+                    className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm flex flex-col sm:flex-col md:flex-row md:justify-between md:items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                    onClick={() => handleViewHistory(ride)}
+                  >
+                    {/* Route + Driver */}
+                    <div className="flex flex-col gap-1">
+                      <div className="text-base sm:text-lg font-medium text-gray-800 dark:text-gray-200 flex items-center space-x-2">
+                        <span className="font-semibold">{ride.from}</span>
+                        <TbArrowRight className="text-lg text-gray-500" />
+                        <span className="font-semibold">{ride.to}</span>
+                      </div>
+
+                      <div className="text-gray-600 dark:text-gray-400 text-sm sm:text-base flex flex-wrap gap-1 sm:gap-2">
+                        <span className="hidden md:inline">
+                          Driver: {ride.driverId?.name || "Unknown Driver"} |
+                        </span>
+                        <span>
+                          {new Date(ride.date).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                        <span>
+                          at{" "}
+                          {new Date(`1970-01-01T${ride.time}`).toLocaleTimeString("en-US", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                        <span>|</span>
+                        <span className="font-bold text-[#04007f] dark:text-[#2fff75]">
+                          ₹{fare.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                        </span>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="text-center text-gray-500 dark:text-gray-400 text-sm sm:text-base">
+              You have no ride history.
+            </p>
+          )}
+        </div>
+      );
+      }
       case 'chats':
         return (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8 h-[600px] overflow-y-auto">
@@ -724,24 +1099,57 @@ const [messageText, setMessageText] = useState("");
       <div className="container mx-auto p-6 md:p-10 w-full max-w-5xl">
       {/* Welcome and Search Section */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
-          <h2 className="text-3xl font-extrabold text-center mb-2">Welcome aboard, {userName}!</h2>
-          <p className="text-center text-lg text-gray-600 dark:text-gray-400 mb-6">Find your next ride easily.</p>
-          
-          <div className="flex flex-col md:flex-row items-center gap-4">
-            <input
-              type="text"
-              placeholder="Enter pick-up location..."
-              className="w-full md:flex-1 px-5 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#5252c3] dark:focus:ring-[#2fff75] dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            />
-            <input
-              type="text"
-              placeholder="Enter destination..."
-              className="w-full md:flex-1 px-5 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#5252c3] dark:focus:ring-[#2fff75] dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            />
-            <button className="w-full md:w-auto px-6 py-3 bg-[#04007f] text-white font-bold rounded-full shadow-lg hover:bg-[#5252c3] transition-colors flex items-center justify-center">
-              <i className="fas fa-search mr-2"></i> Find Ride
-            </button>
-          </div>
+        <h2 className="text-3xl font-extrabold text-center mb-2">
+          Welcome aboard, {userName}!
+        </h2>
+        <p className="text-center text-lg text-gray-600 dark:text-gray-400 mb-6">
+          Find your next ride easily.
+        </p>
+
+        <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 w-full">
+        <input
+          type="text"
+          placeholder="Enter pick-up location..."
+          value={searchFrom}
+          onChange={(e) => setSearchFrom(e.target.value)}
+          className="w-full md:flex-1 px-5 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#5252c3] dark:focus:ring-[#2fff75] dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        />
+
+        <input
+          type="text"
+          placeholder="Enter destination..."
+          value={searchTo}
+          onChange={(e) => setSearchTo(e.target.value)}
+          className="w-full md:flex-1 px-5 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#5252c3] dark:focus:ring-[#2fff75] dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        />
+
+        <input
+          type="date"
+          value={searchDate}
+          onChange={(e) => setSearchDate(e.target.value)}
+          min={new Date().toISOString().split("T")[0]} // ✅ prevents past dates
+          className="w-full md:w-52 px-5 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#5252c3] dark:focus:ring-[#2fff75] dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        />
+
+        {/* Buttons: Find + Reset */}
+        <div className="flex flex-row items-center gap-2 w-full md:w-auto">
+          <button
+            onClick={handleSearch}
+            className="flex-1 md:flex-none w-full md:w-auto px-6 py-3 bg-[#04007f] text-white font-bold rounded-full shadow-lg hover:bg-[#5252c3] transition-colors flex items-center justify-center"
+          >
+            <i className="fas fa-search mr-2"></i> Find Ride
+          </button>
+
+          <button
+            onClick={handleResetSearch}
+            className={`p-3 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-transform ${
+              resetRotating ? "animate-spin" : ""
+            }`}
+          >
+            <FiRefreshCw size={20} />
+          </button>
+        </div>
+      </div>
       </div>
         
       {/* Tabbed Navigation */}

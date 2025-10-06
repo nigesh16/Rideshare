@@ -82,13 +82,14 @@ function Driver(){
 
         //Validate license
         const trimmed = license.trim().toUpperCase();
-        const licensePattern = /^TN\s?\d{2}\s?[A-Z]{1,2}\s?\d{1,7}$/i;
+        const licensePattern = /^[A-Z]{2}\d{2}\d{4,11}$/; // Adjust digits as per state rules
 
         if (!trimmed) {
-          return toast.error("License number is required",{containerId:"right"});
+          return toast.error("License number is required", { containerId: "right" });
         } else if (!licensePattern.test(trimmed)) {
-          return toast.error("Invalid license number format",{containerId:"right"});
+          return toast.error("Invalid license number format", { containerId: "right" });
         }
+
         // ✅ All validations passed
         try{
             const res = await axios.post("http://localhost:3000/d/check-email",{name,email: trimmedEmail});
@@ -171,7 +172,7 @@ function Driver(){
             else{
                 toast.success("Successfully login!",{containerId:"left"});
                 localStorage.setItem("driverToken", res.data.token);
-                clearAllFields();
+                clearAllFields(); 
                   setTimeout(() => {
                     navigate("/driver-home");
                   }, 1000);

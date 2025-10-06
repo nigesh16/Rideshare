@@ -4,9 +4,15 @@ const RideSchema = new mongoose.Schema({
   driverId: { type: mongoose.Schema.Types.ObjectId, ref: "Drivers", required: true },
   passengers: [
     {
+      _id: { type: mongoose.Schema.Types.ObjectId, auto: true }, // unique for each booking
       passengerId: { type: mongoose.Schema.Types.ObjectId, ref: "Passengers", required: true },
       seatsBooked: { type: Number, required: true },
-      farePaid: { type: Number, required: true }
+      farePaid: { type: Number, required: true },
+      status: { type: String, enum: ["pending", "accepted", "rejected", "canceled"], default: "pending" },
+      requestedAt: { type: Date, default: Date.now },
+      bookedAt: { type: Date },
+      rejectedAt: { type: Date },
+      canceledAt: {type: Date},
     }
   ],
   from: { type: String, required: true },

@@ -1,87 +1,141 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
+
+// axios base URL
+const api = axios.create({
+  baseURL: "http://localhost:3000", // backend URL
+});
 
 const PassengerProfile = () => {
   const navigate = useNavigate();
+  const [passenger, setPassenger] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
 
-  // Mock data for the passenger's profile
-  const passenger = {
-    name: 'Alex Johnson',
-    email: 'alex.j@example.com',
-    phone: '+1 (555) 123-4567',
-    gender: 'Male',
-    age: 29,
-    profilePic: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1yZWxhdGVkfDE3fHx8ZW58MHx8fHx8',
+  const defaultProfilePic =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a0aec0'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+
+  // Fetch passenger details
+  const fetchPassenger = async () => {
+    try {
+      const token = localStorage.getItem("passengerToken");
+      if (!token) throw new Error("No token found");
+
+      const res = await api.get("/p/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setPassenger(res.data);
+      console.log("Passenger found:", res.data);
+    } catch (err) {
+      console.error("Fetch passenger error:", err);
+      setPassenger(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    fetchPassenger();
+  }, []);
+
+  // Handle file select
+  const handleFileChange = (e) => {
+    setSelectedFile(e.target.files[0]);
+  };
+
+  // Upload profile picture
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+    setUpdating(true);
+    try {
+      const token = localStorage.getItem("passengerToken");
+      const formData = new FormData();
+      formData.append("profilePicture", selectedFile);
+
+      await api.post("/p/profile/picture", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setSelectedFile(null);
+      fetchPassenger();
+    } catch (err) {
+      console.error("Upload error:", err);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  if (loading)
+    return <p className="text-center mt-20 text-gray-500">Loading profile...</p>;
+
+  const profilePic = passenger?.profilePicture || defaultProfilePic;
+
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col items-center">
-      {/* Navbar Section */}
-      <div className="flex justify-between items-center w-full px-6 py-4 bg-white dark:bg-gray-800 shadow-md">
-        <h1 className="text-2xl font-bold text-[#04007f] dark:text-[#2fff75]">RideShare</h1>
-        <nav className="flex items-center space-x-4">
-          <button onClick={() => navigate('/passenger-home')} className="text-sm font-medium hover:text-[#5252c3] dark:hover:text-[#2fff75] transition-colors">Back to Dashboard</button>
-        </nav>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4">
+      {/* Header */}
+      <div className="absolute top-4 left-4">
+        <button
+          onClick={() => navigate("/passenger-home")}
+          className="bg-[#04007f] dark:bg-[#2fff75] text-white dark:text-gray-900 px-4 py-2 rounded-lg font-semibold shadow-md hover:opacity-90 transition"
+        >
+          ← Back
+        </button>
       </div>
 
-      <div className="container mx-auto p-6 md:p-10 w-full max-w-5xl">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
-          <h2 className="text-3xl font-extrabold text-center mb-6">My Profile</h2>
-          <div className="flex flex-col items-center">
-            {/* Profile Picture */}
-            <div className="relative w-32 h-32 mb-6">
-              <img
-                src={passenger.profilePic}
-                alt="Profile"
-                className="w-full h-full rounded-full object-cover border-4 border-[#04007f] dark:border-[#2fff75] shadow-lg"
-              />
-              <button className="absolute bottom-0 right-0 bg-[#04007f] dark:bg-[#2fff75] text-white p-2 rounded-full shadow-md">
-                <i className="fas fa-camera"></i>
-              </button>
-            </div>
+      {/* Profile Card */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 w-full max-w-md flex flex-col items-center">
+        <h2 className="text-3xl font-extrabold mb-6 text-center text-[#04007f] dark:text-[#2fff75]">
+          Passenger Profile
+        </h2>
 
-            {/* Profile Information */}
-            <div className="w-full max-w-md space-y-4">
-              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm">
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Full Name</p>
-                <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">{passenger.name}</p>
-              </div>
-              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm">
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Email</p>
-                <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">{passenger.email}</p>
-              </div>
-              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm">
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Phone Number</p>
-                <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">{passenger.phone}</p>
-              </div>
-              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm flex justify-between">
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Gender</p>
-                  <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">{passenger.gender}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Age</p>
-                  <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">{passenger.age}</p>
-                </div>
-              </div>
-            </div>
+        {/* Profile Picture */}
+        <div className="relative mb-6">
+          <img
+            src={profilePic}
+            alt="Profile"
+            className="w-32 h-32 rounded-full object-cover border-4 border-[#04007f] dark:border-[#2fff75] shadow-lg"
+          />
+          <label className="absolute bottom-0 right-0 bg-[#04007f] dark:bg-[#2fff75] text-white dark:text-gray-900 p-2 rounded-full shadow-md cursor-pointer">
+            <input type="file" className="hidden" onChange={handleFileChange} />
+            <i className="fas fa-camera"></i>
+          </label>
+          {selectedFile && (
+            <button
+              onClick={handleUpload}
+              disabled={updating}
+              className="mt-3 w-full bg-[#04007f] dark:bg-[#2fff75] text-white dark:text-gray-900 py-2 rounded-full font-semibold hover:opacity-90 transition"
+            >
+              {updating ? "Uploading..." : "Upload Picture"}
+            </button>
+          )}
+        </div>
 
-            {/* Action Buttons */}
-            <div className="w-full max-w-md mt-6 space-y-4">
-              <button
-                onClick={() => alert('Editing profile... (This is a mock action)')}
-                className="w-full py-3 bg-[#04007f] text-white font-bold rounded-full shadow-lg hover:bg-[#5252c3] transition-colors"
-              >
-                Edit Profile
-              </button>
-              <button
-                onClick={() => navigate('/passenger-home')}
-                className="w-full py-3 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold rounded-full shadow-lg hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
-              >
-                Back to Dashboard
-              </button>
-            </div>
+        {/* Passenger Info */}
+        <div className="w-full space-y-4">
+          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Full Name</p>
+            <p className="text-lg font-semibold">{passenger?.name || "Not provided"}</p>
+          </div>
+
+          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
+            <p className="text-lg font-semibold">{passenger?.email || "Not provided"}</p>
+          </div>
+
+          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Date of Birth</p>
+            <p className="text-lg font-semibold">{passenger?.dob || "Not provided"}</p>
+          </div>
+
+          <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Gender</p>
+            <p className="text-lg font-semibold">{passenger?.gender || "Not provided"}</p>
           </div>
         </div>
       </div>
@@ -90,3 +144,4 @@ const PassengerProfile = () => {
 };
 
 export default PassengerProfile;
+

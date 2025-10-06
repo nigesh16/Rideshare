@@ -6,6 +6,10 @@ import { toast,ToastContainer } from "react-toastify";
 import { io } from "socket.io-client";
 import { TbArrowRight } from "react-icons/tb"; 
 import { FaTrash } from "react-icons/fa"; 
+//for dropdownlist
+import { Menu, Transition } from "@headlessui/react";
+import { Fragment } from "react";
+import { ChevronDownIcon } from "@heroicons/react/24/solid";
 
 const DriverHome = () => {
     const navigate = useNavigate(); 
@@ -31,6 +35,11 @@ const DriverHome = () => {
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    //for posted ride dropdown
+    const [psortOrder, setPSortOrder] = useState("newest");
+    //for history ride dropdown
+    const [HsortOrder, setHSortOrder] = useState("newest"); 
+
 
 
       //Token Verify
@@ -48,7 +57,7 @@ const DriverHome = () => {
           })
           .then(res => {
             setUserId(res.data.userId);
-            setUserName(res.data.name);
+            setUserName(res.data.name); 
           })
           .catch(err => {
             localStorage.removeItem("token");
@@ -59,8 +68,7 @@ const DriverHome = () => {
 
       //Show driver posted rides
       const [postedRides, setPostedRides] = useState([]);
-        useEffect(() => {
-        const fetchDriverRides = async () => {
+      const fetchDriverRides = async () => {
           try {
             const token = localStorage.getItem("driverToken");
             const res = await axios.get("http://localhost:3000/d/posted-rides", {
@@ -76,9 +84,9 @@ const DriverHome = () => {
             );
           }
         };
-
-        fetchDriverRides();
-      }, []);
+        useEffect(() => {
+          fetchDriverRides();
+        }, []);
 
       //Validation for Posting New Ride
       const handleSubmit = async (e) => {
@@ -208,7 +216,10 @@ const DriverHome = () => {
       };
 
       const confirmLogout = () => {
-        window.location.href = '/';
+        localStorage.removeItem("driverToken");
+        setIsLogoutModalOpen(false);
+        setIsMenuOpen(false); // Close menu after logout
+        navigate('/');
       };
       // for scroll to support-help section
       const handleScrollToSupport = () => {
@@ -265,144 +276,144 @@ const DriverHome = () => {
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a0aec0'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
 
 
- // -------------------- Socket Setup --------------------
-  const [socket, setSocket] = useState(null);
+// -------------------- Socket Setup --------------------
+    const [socket, setSocket] = useState(null);
 
-  useEffect(() => {
-    const token = localStorage.getItem("driverToken");
-    if (!token) return;
+    useEffect(() => {
+      const token = localStorage.getItem("driverToken");
+      if (!token) return;
 
-    const newSocket = io("http://localhost:3000", {
-      auth: { token },
-      transports: ["websocket", "polling"],
-    });
+      const newSocket = io("http://localhost:3000", {
+        auth: { token },
+        transports: ["websocket", "polling"],
+      });
 
-    newSocket.on("connect", () => {
-      console.log("✅ Driver connected to Socket.IO:", newSocket.id);
-    });
+      newSocket.on("connect", () => {
+        console.log("✅ Driver connected to Socket.IO:", newSocket.id);
+      });
 
-    newSocket.on("connect_error", (err) => {
-      console.error("❌ Socket.IO connection error:", err.message);
-    });
+      newSocket.on("connect_error", (err) => {
+        console.error("❌ Socket.IO connection error:", err.message);
+      });
 
-    setSocket(newSocket);
-    return () => {
-      newSocket.disconnect();
-      setSocket(null);
-    };
-  }, []);
+      setSocket(newSocket);
+      return () => {
+        newSocket.disconnect();
+        setSocket(null);
+      };
+    }, []);
 
-  // -------------------- Chat state --------------------
-  const [chats, setChats] = useState([]);
-  const [chatToView, setChatToView] = useState(null);
-  const [messageText, setMessageText] = useState("");
+// -------------------- Chat state --------------------
+    const [chats, setChats] = useState([]);
+    const [chatToView, setChatToView] = useState(null);
+    const [messageText, setMessageText] = useState("");
 
-  // ref to avoid stale closure in socket listener
-  const chatToViewRef = useRef(chatToView);
-  useEffect(() => {
-    chatToViewRef.current = chatToView;
-  }, [chatToView]);
+// ref to avoid stale closure in socket listener
+    const chatToViewRef = useRef(chatToView);
+    useEffect(() => {
+      chatToViewRef.current = chatToView;
+    }, [chatToView]);
 
-  // Fetch chats
-  useEffect(() => {
-    const fetchChats = async () => {
-      try {
-        const res = await axios.get("http://localhost:3000/chat", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("driverToken")}` },
-        });
-        // add unread false by default
-        const chatsWithUnread = res.data.map((c) => ({ ...c, unread: false }));
-        setChats(chatsWithUnread);
-      } catch (err) {
-        console.error("Error fetching chats:", err);
-      }
-    };
+// Fetch chats
+    useEffect(() => {
+      const fetchChats = async () => {
+        try {
+          const res = await axios.get("http://localhost:3000/chat", {
+            headers: { Authorization: `Bearer ${localStorage.getItem("driverToken")}` },
+          });
+          // add unread false by default
+          const chatsWithUnread = res.data.map((c) => ({ ...c, unread: false }));
+          setChats(chatsWithUnread);
+        } catch (err) {
+          console.error("Error fetching chats:", err);
+        }
+      };
 
-    // only fetch when not viewing a single chat
-    if (!chatToView) fetchChats();
-  }, [chatToView]);
+      // only fetch when not viewing a single chat
+      if (!chatToView) fetchChats();
+    }, [chatToView]);
 
-  // When socket & chats are ready, join rooms for all chat partners so driver receives messages even if the chat isn't open
-  useEffect(() => {
-    if (!socket || !chats || chats.length === 0) return;
-    chats.forEach((c) => {
-      const otherId = c.passenger?._id;
-      if (otherId) socket.emit("joinChat", { otherUserId: otherId });
-    });
-  }, [socket, chats]);
+// When socket & chats are ready, join rooms for all chat partners so driver receives messages even if the chat isn't open
+    useEffect(() => {
+      if (!socket || !chats || chats.length === 0) return;
+      chats.forEach((c) => {
+        const otherId = c.passenger?._id;
+        if (otherId) socket.emit("joinChat", { otherUserId: otherId });
+      });
+    }, [socket, chats]);
 
-  // socket listener for incoming messages
-  useEffect(() => {
-    if (!socket) return;
+// socket listener for incoming messages
+    useEffect(() => {
+      if (!socket) return;
 
-    const handleReceiveMessage = (msg) => {
-  const currentChat = chatToViewRef.current;
+      const handleReceiveMessage = (msg) => {
+    const currentChat = chatToViewRef.current;
 
-  // If viewing this chat, no unread
-  const isUnread = currentChat?.passenger?._id !== msg.senderId;
+    // If viewing this chat, no unread
+    const isUnread = currentChat?.passenger?._id !== msg.senderId;
 
-  setChats(prevChats =>
-    prevChats.map(c =>
-      c.passenger?._id === msg.senderId
-        ? {
-            ...c,
-            lastMessage: msg.text,
-            lastMessageTime: msg.time,
-            unreadCount: isUnread ? (c.unreadCount || 0) + 1 : 0,
-          }
-        : c
-    )
-  );
-
-  // Append to messages if this chat is open
-  if (!isUnread) {
-    setChatToView(prev => ({
-      ...prev,
-      messages: [...(prev?.messages || []), msg],
-    }));
-  }
-};
-
-
-    socket.on("receiveMessage", handleReceiveMessage);
-    return () => socket.off("receiveMessage", handleReceiveMessage);
-  }, [socket]);
-
-  // send message
-  const sendMessage = () => {
-    if (!messageText.trim() || !chatToView?.passenger?._id || !socket) return;
-
-    const newMsg = {
-      text: messageText,
-      sender: "driver",
-      time: new Date().toISOString(),
-      _id: Date.now(),
-      senderId: userId,
-    };
-
-    // append locally
-    setChatToView((prev) => ({
-      ...prev,
-      messages: [...(prev?.messages || []), newMsg],
-    }));
-
-    // update preview
-    setChats((prevChats) =>
-      prevChats.map((c) =>
-        c.passenger?._id === chatToView.passenger._id
-          ? { ...c, lastMessage: newMsg.text, lastMessageTime: newMsg.time, unread: false }
+    setChats(prevChats =>
+      prevChats.map(c =>
+        c.passenger?._id === msg.senderId
+          ? {
+              ...c,
+              lastMessage: msg.text,
+              lastMessageTime: msg.time,
+              unreadCount: isUnread ? (c.unreadCount || 0) + 1 : 0,
+            }
           : c
       )
     );
 
-    // emit to server (server will compute room and broadcast)
-    socket.emit("sendMessage", {
-      text: messageText,
-      otherUserId: chatToView.passenger._id,
-    });
-
-    setMessageText("");
+    // Append to messages if this chat is open
+    if (!isUnread) {
+      setChatToView(prev => ({
+        ...prev,
+        messages: [...(prev?.messages || []), msg],
+      }));
+    }
   };
+
+
+      socket.on("receiveMessage", handleReceiveMessage);
+      return () => socket.off("receiveMessage", handleReceiveMessage);
+    }, [socket]);
+
+// send message
+    const sendMessage = () => {
+      if (!messageText.trim() || !chatToView?.passenger?._id || !socket) return;
+
+      const newMsg = {
+        text: messageText,
+        sender: "driver",
+        time: new Date().toISOString(),
+        _id: Date.now(),
+        senderId: userId,
+      };
+
+      // append locally
+      setChatToView((prev) => ({
+        ...prev,
+        messages: [...(prev?.messages || []), newMsg],
+      }));
+
+      // update preview
+      setChats((prevChats) =>
+        prevChats.map((c) =>
+          c.passenger?._id === chatToView.passenger._id
+            ? { ...c, lastMessage: newMsg.text, lastMessageTime: newMsg.time, unread: false }
+            : c
+        )
+      );
+
+      // emit to server (server will compute room and broadcast)
+      socket.emit("sendMessage", {
+        text: messageText,
+        otherUserId: chatToView.passenger._id,
+      });
+
+      setMessageText("");
+    };
 // -------------------- Handle Chat Select -------------------- 
     const handleChatSelect = (chat) =>
       { setChatToView(chat); // Reset unread when opening a chat 
@@ -495,63 +506,167 @@ const DriverHome = () => {
 
     const renderContent = () => {
       switch (activeTab) {
-        case 'posted':
-          return (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
-        <h3 className="text-2xl font-bold text-[#04007f] dark:text-[#2fff75] mb-4">
-          My Posted Rides
-        </h3>
+        case 'posted': {
+        // 🔥 Sort posted rides by createdAt (from backend timestamps)
+        const sortedPosted = [...postedRides].sort((a, b) => {
+          const dateA = new Date(a.createdAt);
+          const dateB = new Date(b.createdAt);
+          return psortOrder === "newest" ? dateB - dateA : dateA - dateB;
+        });
 
-        {postedRides.length > 0 ? (
-          <ul className="space-y-4">
-            {postedRides.map((ride) => (
-              <li
-                key={ride._id}
-                onClick={() => handleRideClick(ride)}
-                className="cursor-pointer bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+        return (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
+            {/* Header + Sort Dropdown */}
+          <div className="flex justify-between items-center mb-4 flex-nowrap">
+            <h3 className="text-lg sm:text-2xl font-bold text-[#04007f] dark:text-[#2fff75] truncate">
+              My Posted Rides
+            </h3>
+
+            {/* Sort Dropdown */}
+            <Menu as="div" className="relative">
+              <Menu.Button className="inline-flex justify-between items-center w-auto rounded-full bg-gray-100 dark:bg-gray-700 px-3 py-1 text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+                Sort: {psortOrder === "newest" ? "Newest" : "Oldest"}
+                <ChevronDownIcon className="w-4 h-4 ml-1 sm:ml-2" />
+              </Menu.Button>
+              <Transition
+                as={Fragment}
+                enter="transition ease-out duration-100"
+                enterFrom="transform opacity-0 scale-95"
+                enterTo="transform opacity-100 scale-100"
+                leave="transition ease-in duration-75"
+                leaveFrom="transform opacity-100 scale-100"
+                leaveTo="transform opacity-0 scale-95"
               >
-                <div className="flex flex-col space-y-2 mb-4 md:mb-0">
-                  <div className="text-lg font-medium text-gray-800 dark:text-gray-200 flex items-center space-x-2">
-                    <span className="font-semibold">{ride.from}</span> 
-                    <TbArrowRight className="text-lg text-gray-500" />
-                    <span className="font-semibold">{ride.to}</span>
-                  </div>
-                  <div className="text-gray-600 dark:text-gray-400 text-sm">
-                    <span>
-                      {new Date(ride.date).toLocaleDateString("en-GB", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric"
-                              })} at {new Date(`1970-01-01T${ride.time}`).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                  </div>
-                </div>
+                <Menu.Items className="absolute right-0 mt-2 w-36 origin-top-right rounded-xl bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                  {[
+                    { value: "newest", label: "Newest → Oldest" },
+                    { value: "oldest", label: "Oldest → Newest" },
+                  ].map((option) => (
+                    <Menu.Item key={option.value}>
+                      {({ active }) => (
+                        <button
+                          className={`${
+                            active ? "bg-blue-100 dark:bg-blue-900" : ""
+                          } w-full text-left px-3 py-1 text-sm text-gray-800 dark:text-gray-200 rounded-lg`}
+                          onClick={() => setPSortOrder(option.value)}
+                        >
+                          {option.label}
+                        </button>
+                      )}
+                    </Menu.Item>
+                  ))}
+                </Menu.Items>
+              </Transition>
+            </Menu>
+          </div>
+            {sortedPosted.length > 0 ? (
+              <ul className="space-y-4">
+                {sortedPosted.map((ride) => {
+                  const isCanceled = ride.status === "canceled";
 
-                <div className="flex flex-col items-end">
-                  <span className="text-lg font-bold text-gray-800 dark:text-gray-200">
-                    <i className="fas fa-couch mr-1 text-gray-700 text-base"></i> {ride.totalSeats - ride.availableSeats} of {ride.totalSeats}{" "}
-                    seats booked
-                  </span>
+                  return (
+                    <li
+                      key={ride._id}
+                      onClick={() => handleRideClick(ride)}
+                      className={`cursor-pointer p-4 rounded-xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center transition-colors 
+                        ${
+                          isCanceled
+                            ? "bg-gray-50 dark:bg-gray-700/30"
+                            : "bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600"
+                        }`}
+                    >
+                      {/* From - To */}
+                      <div className="flex flex-col space-y-2 mb-4 md:mb-0">
+                        <div className="text-lg font-medium flex items-center space-x-2">
+                          <span
+                            className={`${
+                              isCanceled
+                                ? "text-gray-500 dark:text-gray-400 line-through"
+                                : "text-gray-800 dark:text-gray-200"
+                            }`}
+                          >
+                            {ride.from}
+                          </span>
+                          <TbArrowRight
+                            className={`text-lg ${
+                              isCanceled ? "text-gray-500/70" : "text-gray-500"
+                            }`}
+                          />
+                          <span
+                            className={`${
+                              isCanceled
+                                ? "text-gray-500 dark:text-gray-400 line-through"
+                                : "text-gray-800 dark:text-gray-200"
+                            }`}
+                          >
+                            {ride.to}
+                          </span>
+                        </div>
 
-                  {ride.passengers?.length > 0 && (
-                    <div className="mt-2 text-sm text-gray-500 dark:text-gray-400 hidden md:inline">
-                      Passengers:{" "}
-                      {ride.passengers
-                        ?.map((p) => p?.passengerId?.name ?? "Unknown")
-                        .join(", ")}
-                    </div>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-center text-gray-500 dark:text-gray-400">
-            You haven't posted any rides yet.
-          </p>
-        )}
-      </div>
-          );
+                        {/* Date/Time */}
+                        <div className="text-sm">
+                          <span
+                            className={`${
+                              isCanceled
+                                ? "text-gray-500 dark:text-gray-400 line-through"
+                                : "text-gray-600 dark:text-gray-400 font-semibold"
+                            }`}
+                          >
+                            {new Date(ride.date).toLocaleDateString("en-GB", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}{" "}
+                            at{" "}
+                            {new Date(`1970-01-01T${ride.time}`).toLocaleTimeString(
+                              "en-US",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Seats & Passengers */}
+                      <div className="flex flex-col items-end">
+                        {isCanceled ? (
+                          <span className="text-gray-500 dark:text-gray-400 font-bold text-sm px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full ">
+                            Ride Canceled
+                          </span>
+                        ) : (
+                          <>
+                            <span className="text-lg font-bold text-gray-800 dark:text-gray-200">
+                              <i className="fas fa-couch mr-1 text-gray-700 text-base"></i>
+                              {ride.totalSeats - ride.availableSeats} of{" "}
+                              {ride.totalSeats} seats booked
+                            </span>
+
+                            {ride.passengers?.length > 0 && (
+                              <div className="mt-2 text-sm text-gray-500 dark:text-gray-400 hidden md:inline">
+                                Passengers:{" "}
+                                {ride.passengers
+                                  ?.filter((p) => p.status === "accepted")
+                                  .map((p) => p?.passengerId?.name ?? "Unknown")
+                                  .join(", ")}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="text-center text-gray-500 dark:text-gray-400">
+                You haven't posted any rides yet.
+              </p>
+            )}
+          </div>
+        );
+        }
         case 'post':
           return (
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
@@ -586,6 +701,7 @@ const DriverHome = () => {
                       type="date"
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
+                      min={new Date().toISOString().split("T")[0]}
                       className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-[#5252c3] focus:border-[#5252c3] dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                       required
                     />
@@ -656,15 +772,70 @@ const DriverHome = () => {
               </form>
             </div>
           );
-        case 'history':
+        case 'history': {
+          // Sort rides based on date + time
+          const sortedHistory = [...rideHistory].sort((a, b) => {
+            const [hourA, minA] = a.time.split(":").map(Number);
+            const [hourB, minB] = b.time.split(":").map(Number);
+
+            const dateTimeA = new Date(a.date);
+            dateTimeA.setHours(hourA, minA, 0, 0);
+
+            const dateTimeB = new Date(b.date);
+            dateTimeB.setHours(hourB, minB, 0, 0);
+
+            return HsortOrder === "newest" ? dateTimeB - dateTimeA : dateTimeA - dateTimeB;
+          });
+
           return (
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-              <h3 className="text-2xl font-bold text-[#04007f] dark:text-[#2fff75] mb-4">
-                Ride History
-              </h3>
-              {rideHistory.length > 0 ? (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+              {/* Header + Sort Dropdown */}
+          <div className="flex justify-between items-center mb-4 flex-nowrap">
+            <h3 className="text-xl sm:text-2xl font-bold text-[#04007f] dark:text-[#2fff75] truncate">
+              Ride History
+            </h3>
+
+            {/* Sort Dropdown */}
+            <Menu as="div" className="relative">
+              <Menu.Button className="inline-flex justify-between items-center w-auto rounded-full bg-gray-100 dark:bg-gray-700 px-3 py-1 sm:px-4 sm:py-1 text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+                Sort: {HsortOrder === "newest" ? "Newest" : "Oldest"}
+                <ChevronDownIcon className="w-3 sm:w-4 h-3 sm:h-4 ml-2" />
+              </Menu.Button>
+              <Transition
+                as={Fragment}
+                enter="transition ease-out duration-100"
+                enterFrom="transform opacity-0 scale-95"
+                enterTo="transform opacity-100 scale-100"
+                leave="transition ease-in duration-75"
+                leaveFrom="transform opacity-100 scale-100"
+                leaveTo="transform opacity-0 scale-95"
+              >
+                <Menu.Items className="absolute right-0 mt-2 w-36 origin-top-right rounded-xl bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                  {[
+                    { value: "newest", label: "Newest → Oldest" },
+                    { value: "oldest", label: "Oldest → Newest" },
+                  ].map((option) => (
+                    <Menu.Item key={option.value}>
+                      {({ active }) => (
+                        <button
+                          className={`${
+                            active ? "bg-blue-100 dark:bg-blue-900" : ""
+                          } w-full text-left px-4 py-2 text-sm text-gray-800 dark:text-gray-200 rounded-lg`}
+                          onClick={() => setHSortOrder(option.value)}
+                        >
+                          {option.label}
+                        </button>
+                      )}
+                    </Menu.Item>
+                  ))}
+                </Menu.Items>
+              </Transition>
+            </Menu>
+          </div>
+              {/* Ride List */}
+              {sortedHistory.length > 0 ? (
                 <ul className="space-y-4">
-                  {rideHistory.map((ride) => (
+                  {sortedHistory.map((ride) => (
                     <li
                       key={ride._id}
                       onClick={() => navigate("/driver/history-ride", { state: { ride } })}
@@ -675,6 +846,7 @@ const DriverHome = () => {
                         <TbArrowRight className="text-lg text-gray-500" />
                         <span className="font-semibold">{ride.to}</span>
                       </div>
+
                       <div className="text-gray-600 dark:text-gray-400 text-sm mt-2 md:mt-0">
                         {new Date(ride.date).toLocaleDateString()} |{" "}
                         <span className="font-bold text-[#04007f] dark:text-[#2fff75]">
@@ -691,6 +863,7 @@ const DriverHome = () => {
               )}
             </div>
           );
+        }
         case 'chats':
           return (
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8 h-[600px] overflow-y-auto">
@@ -909,6 +1082,7 @@ const DriverHome = () => {
           <button
             onClick={() => {
               postRide();
+              fetchDriverRides();
               setIsConfirmModalOpen(false);
             }}
             className="px-6 py-2 bg-[#04007f] text-white font-bold rounded-full shadow-lg hover:bg-[#5252c3] transition-colors"

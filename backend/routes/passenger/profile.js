@@ -1,0 +1,62 @@
+const express = require("express");
+const router = express.Router();
+const Passenger = require("../../models/PassengerModel");
+const verifyPassenger = require("../middleware/verifyPassenger");
+const multer = require("multer");
+
+// 🔹 Multer setup for in-memory storage
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+// =====================
+// GET Passenger Profile
+// =====================
+router.get("/", verifyPassenger, async (req, res) => {
+  try {
+    const passenger = await Passenger.findById(req.user.id).select("-password");
+    if (!passenger) return res.status(404).json({ message: "Passenger not found" });
+
+    // Convert profile picture to Base64
+    let profilePicture = null;
+    if (passenger.profilePicture && passenger.profilePicture.data) {
+      profilePicture = `data:${passenger.profilePicture.contentType};base64,${passenger.profilePicture.data.toString("base64")}`;
+    }
+
+    res.json({
+      name: passenger.name,
+      email: passenger.email,
+      dob: passenger.dob,
+      gender: passenger.gender,
+      profilePicture,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// =====================
+// POST / Update Profile Picture
+// =====================
+router.post("/picture", verifyPassenger, upload.single("profilePicture"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+
+    const passenger = await Passenger.findById(req.user.id);
+    if (!passenger) return res.status(404).json({ message: "Passenger not found" });
+
+    // Save image buffer and content type
+    passenger.profilePicture = {
+      data: req.file.buffer,
+      contentType: req.file.mimetype,
+    };
+
+    await passenger.save();
+    res.json({ message: "Profile picture updated successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+module.exports = router;

@@ -136,7 +136,11 @@ const ConfirmRide = () => {
           <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-xl shadow-inner">
             <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2"><FaUser /> Driver & Vehicle</h3>
             <div className="flex items-center gap-4 mb-4">
-              <img src={ride.driverId.profilePicture || defaultProfilePic} alt={`${ride.driverId.name}'s profile`} className="w-20 h-20 rounded-full border-2 border-[#04007f] dark:border-[#2fff75] object-cover"/>
+              <img src={
+                  ride.driverId?.profilePicture?.data && ride.driverId?.profilePicture?.contentType
+                    ? `data:${ride.driverId.profilePicture.contentType};base64,${ride.driverId.profilePicture.data}`
+                    : defaultProfilePic
+                } alt={`${ride.driverId.name}'s profile`} className="w-20 h-20 rounded-full border-2 border-[#04007f] dark:border-[#2fff75] object-cover"/>
               <div className="text-gray-700 dark:text-gray-300">
                 <p><span className="font-semibold">Driver:</span> {ride.driverId.name}</p>
                 <p><span className="font-semibold">Age:</span> {new Date().getFullYear() - new Date(ride.driverId.dob).getFullYear()}</p>

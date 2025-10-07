@@ -6,6 +6,7 @@ const dotenv = require("dotenv");
 const db = require("./db");
 const driverRoutes = require("./routes/driver/driverRoutes");
 const passengerRoutes = require("./routes/passenger/passengerRoutes");
+const adminRoutes = require("./routes/admin/admin");
 const chatRoutes = require("./routes/ChatRoutes");
 const { initSocket } = require("./socket");
 
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use("/p", passengerRoutes);
 app.use("/d", driverRoutes);
 app.use("/chat", chatRoutes);
+app.use("/admin", adminRoutes);
 
 const server = http.createServer(app);
 initSocket(server);

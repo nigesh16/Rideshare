@@ -243,7 +243,12 @@ const PostedRide = () => {
               </button>
               <div className="flex flex-col items-center space-y-2">
                 <img
-                  src={selectedPassenger.passengerId?.profilePicture || defaultProfilePic}
+                  src={
+                      selectedPassenger.passengerId?.profilePicture?.data &&
+                      selectedPassenger.passengerId?.profilePicture?.contentType
+                        ? `data:${selectedPassenger.passengerId.profilePicture.contentType};base64,${selectedPassenger.passengerId.profilePicture.data}`
+                        : defaultProfilePic
+                    }
                   alt={selectedPassenger.passengerId?.name || "Passenger"}
                   className="w-24 h-24 rounded-full object-cover"
                 />

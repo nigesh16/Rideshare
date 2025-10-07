@@ -944,7 +944,8 @@ const DriverHome = () => {
                       {chats.map((chat, index) => (
                         <li key={index}>
                           <button onClick={() => handleChatSelect(chat)} className="w-full text-left bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200 flex items-center gap-4">
-                            <img src={defaultProfilePic} alt={chat.passenger.name} className="w-12 h-12 rounded-full object-cover" />
+                            <img src={chat.passenger?.profilePicture?.data
+                            ? `data:${chat.passenger.profilePicture.contentType};base64,${chat.passenger.profilePicture.data}`: defaultProfilePic} className="w-12 h-12 rounded-full object-cover" />
                             <div className="flex-1">
                               <div className="text-lg font-medium text-gray-800 dark:text-gray-200 flex justify-between items-center">
                                 <span>{chat.passenger.name}</span>

@@ -289,7 +289,12 @@ const CancelRide = () => {
             </h3>
             <div className="flex items-center gap-4 mb-4">
               <img
-                src={ride.driverId.profilePicture || defaultProfilePic}
+                src={
+                  ride.driverId?.profilePicture?.data &&
+                  ride.driverId?.profilePicture?.contentType
+                    ? `data:${ride.driverId.profilePicture.contentType};base64,${ride.driverId.profilePicture.data}`
+                    : defaultProfilePic
+                }
                 alt={`${ride.driverId.name}'s profile`}
                 className="w-20 h-20 rounded-full border-2 border-[#04007f] dark:border-[#2fff75] object-cover"
               />

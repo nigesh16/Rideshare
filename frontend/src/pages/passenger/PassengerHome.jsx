@@ -431,19 +431,19 @@ const [messageText, setMessageText] = useState("");
 
         // 🔍 Filter only if search is applied
         const filteredUpcoming = searchApplied
-        ? upcomingRides.filter((ride) => {
-            const matchesFrom = searchFrom
-              ? ride.from.toLowerCase().includes(searchFrom.toLowerCase())
-              : true;
-            const matchesTo = searchTo
-              ? ride.to.toLowerCase().includes(searchTo.toLowerCase())
-              : true;
-            const matchesDate = searchDate
-              ? new Date(ride.date).toISOString().split("T")[0] === searchDate
-              : true;
-            return matchesFrom && matchesTo && matchesDate;
-          })
-        : upcomingRides;
+  ? sortedUpcoming.filter((ride) => {
+      const matchesFrom = searchFrom
+        ? ride.from.toLowerCase().includes(searchFrom.toLowerCase())
+        : true;
+      const matchesTo = searchTo
+        ? ride.to.toLowerCase().includes(searchTo.toLowerCase())
+        : true;
+      const matchesDate = searchDate
+        ? new Date(ride.date).toISOString().split("T")[0] === searchDate
+        : true;
+      return matchesFrom && matchesTo && matchesDate;
+    })
+  : sortedUpcoming; 
 
         return (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-6 md:p-8 mb-8">
@@ -456,7 +456,7 @@ const [messageText, setMessageText] = useState("");
               {/* Sort Dropdown */}
               <Menu as="div" className="relative">
                 <Menu.Button className="inline-flex justify-between items-center w-auto rounded-full bg-gray-100 dark:bg-gray-700 px-3 py-1 sm:px-4 sm:py-1 text-xs sm:text-sm md:text-base font-medium text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition">
-                  Sort: {UsortOrder === "newest" ? "Nearest" : "Oldest"}
+                  Date: {UsortOrder === "newest" ? "Nearest" : "Oldest"}
                   <ChevronDownIcon className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
                 </Menu.Button>
 
@@ -950,7 +950,11 @@ const [messageText, setMessageText] = useState("");
                     {chats.map((chat, index) => (
                       <li key={index}>
                         <button onClick={() => handleChatSelect(chat)} className="w-full text-left bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200 flex items-center gap-4">
-                          <img src={defaultProfilePic} alt={chat.driver.name} className="w-12 h-12 rounded-full object-cover" />
+                          <img src={
+                            chat.driver?.profilePicture?.data && chat.driver?.profilePicture?.contentType
+                              ? `data:${chat.driver.profilePicture.contentType};base64,${chat.driver.profilePicture.data}`
+                              : defaultProfilePic
+                          } alt={chat.driver.name} className="w-12 h-12 rounded-full object-cover" />
                           <div className="flex-1">
                             <div className="text-lg font-medium text-gray-800 dark:text-gray-200 flex justify-between items-center">
                               <span>{chat.driver.name}</span>

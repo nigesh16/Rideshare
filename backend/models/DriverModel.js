@@ -10,7 +10,7 @@ const User = new mongoose.Schema({
   license: { type: String, required: true},
   adminverification: {type: Boolean , default:false},
   profilePicture: {
-    data: Buffer,
+    data: String,
     contentType: String
   },
   rides: [

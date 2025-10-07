@@ -168,9 +168,9 @@ const HistoryRide = () => {
                 const name = person?.name || p.name || "Unknown";
                 const seats = p.seatsBooked ?? person?.seatsBooked ?? 0;
                 const farePaid = p.farePaid ?? person?.farePaid ?? 0;
-                const imgSrc = person?.profilePicture
-                  ? getProfilePicSrc(person.profilePicture)
-                  : defaultProfilePic;
+                const imgSrc = person?.profilePicture?.data && person?.profilePicture?.contentType
+                ? `data:${person.profilePicture.contentType};base64,${person.profilePicture.data}`
+                : defaultProfilePic;
 
                 return (
                   <li

@@ -19,7 +19,7 @@ router.get("/", verifyUser, async (req, res) => {
       let existingChats = await Chat.find({ driverId: id })
         .populate({
           path: "passengerId",
-          select: "name profilePic",
+          select: "name profilePicture",
           strictPopulate: false,
         })
         .lean();
@@ -46,7 +46,7 @@ router.get("/", verifyUser, async (req, res) => {
       const rides = await Booking.find({ driverId: id })
         .populate({
           path: "passengers.passengerId",
-          select: "name profilePic",
+          select: "name profilePicture",
           strictPopulate: false,
         })
         .lean();
@@ -96,7 +96,7 @@ router.get("/", verifyUser, async (req, res) => {
       let existingChats = await Chat.find({ passengerId: id })
         .populate({
           path: "driverId",
-          select: "name profilePic",
+          select: "name profilePicture",
           strictPopulate: false,
         })
         .lean();
@@ -122,7 +122,7 @@ router.get("/", verifyUser, async (req, res) => {
       const rides = await Booking.find({ "passengers.passengerId": id })
         .populate({
           path: "driverId",
-          select: "name profilePic",
+          select: "name profilePicture",
           strictPopulate: false,
         })
         .lean();

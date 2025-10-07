@@ -9,17 +9,19 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 // =====================
-// GET Passenger Profile
+// ✅ GET Passenger Profile
 // =====================
 router.get("/", verifyPassenger, async (req, res) => {
   try {
     const passenger = await Passenger.findById(req.user.id).select("-password");
-    if (!passenger) return res.status(404).json({ message: "Passenger not found" });
+    if (!passenger) {
+      return res.status(404).json({ message: "Passenger not found" });
+    }
 
-    // Convert profile picture to Base64
+    // ✅ Convert stored Base64 image to displayable format
     let profilePicture = null;
-    if (passenger.profilePicture && passenger.profilePicture.data) {
-      profilePicture = `data:${passenger.profilePicture.contentType};base64,${passenger.profilePicture.data.toString("base64")}`;
+    if (passenger.profilePicture?.data && passenger.profilePicture?.contentType) {
+      profilePicture = `data:${passenger.profilePicture.contentType};base64,${passenger.profilePicture.data}`;
     }
 
     res.json({
@@ -30,31 +32,36 @@ router.get("/", verifyPassenger, async (req, res) => {
       profilePicture,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error fetching passenger profile:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
 // =====================
-// POST / Update Profile Picture
+// ✅ POST / Update Profile Picture
 // =====================
 router.post("/picture", verifyPassenger, upload.single("profilePicture"), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
 
     const passenger = await Passenger.findById(req.user.id);
-    if (!passenger) return res.status(404).json({ message: "Passenger not found" });
+    if (!passenger) {
+      return res.status(404).json({ message: "Passenger not found" });
+    }
 
-    // Save image buffer and content type
+    // ✅ Convert image buffer → Base64 and store
     passenger.profilePicture = {
-      data: req.file.buffer,
+      data: req.file.buffer.toString("base64"),
       contentType: req.file.mimetype,
     };
 
     await passenger.save();
+
     res.json({ message: "Profile picture updated successfully" });
   } catch (err) {
-    console.error(err);
+    console.error("Error uploading profile picture:", err);
     res.status(500).json({ message: "Server error" });
   }
 });

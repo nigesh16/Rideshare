@@ -152,7 +152,7 @@ const ConfirmRide = () => {
             </button>
             <p className="text-gray-700 dark:text-gray-300"><FaCar className="inline mr-2"/><span className="font-semibold">Vehicle:</span> {ride.carModel}</p>
             <p className="text-gray-700 dark:text-gray-300"><span className="font-semibold">Color:</span> {ride.carColor}</p>
-            <p className="text-gray-700 dark:text-gray-300"><span className="font-semibold">License Plate:</span> {ride.driverId.license}</p>
+            <p className="text-gray-700 dark:text-gray-300"><span className="font-semibold">Car Number:</span> {ride.carNumber}</p>
           </div>
         </div>
 

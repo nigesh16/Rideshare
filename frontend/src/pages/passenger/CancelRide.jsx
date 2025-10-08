@@ -334,8 +334,8 @@ const CancelRide = () => {
               <span className="font-semibold">Color:</span> {ride.carColor}
             </p>
             <p>
-              <span className="font-semibold">License Plate:</span>{" "}
-              {ride.driverId.license}
+              <span className="font-semibold">Car Number:</span>{" "}
+              {ride.carNumber}
             </p>
           </div>
         </div>

@@ -170,12 +170,9 @@ function Driver(){
               }
             }
             else{
-                toast.success("Successfully login!",{containerId:"left"});
                 localStorage.setItem("driverToken", res.data.token);
                 clearAllFields(); 
-                  setTimeout(() => {
-                    navigate("/driver-home");
-                  }, 1000);
+                navigate("/driver-home");
                 }
           }
         catch(err){

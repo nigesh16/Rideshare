@@ -153,12 +153,9 @@ function Passenger(){
           });
 
           if (res.data.success) {
-            toast.success("Login successful!", { containerId: "left" });
             localStorage.setItem("passengerToken", res.data.token);
             clearAllFields();
-            setTimeout(() => {
-              navigate("/passenger-home");
-            }, 1000);
+            navigate("/passenger-home");
           } else {
             toast.error(res.data.message, { containerId: "left" });
           }

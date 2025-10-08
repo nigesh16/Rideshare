@@ -131,13 +131,11 @@ const AdminHome = ({ setIsLoggedIn }) => {
         if (data.success) {
             // Map the populated ride data structure for simpler display
             const formattedRides = data.rides.map(ride => ({
-                id: ride._id.substring(0, 8), // Shorten ID
-                // Handle populated driver and passenger objects
+                id: ride._id.substring(0, 8),
                 driverName: ride.driverId?.name || 'Unknown Driver',
-                passengerName: ride.passengers?.[0]?.passengerId?.name || 'Unknown Passenger',
-                // Assuming fromLocation and toLocation have a 'name' field
-                from: ride.fromLocation?.name || 'Unknown Start',
-                to: ride.toLocation?.name || 'Unknown End',
+                passengerName: ride.passengers?.length || 0,
+                from: ride.from || 'Unknown Start',
+                to: ride.to || 'Unknown End',
             }));
             setAllRides(formattedRides);
         }
@@ -210,6 +208,10 @@ const AdminHome = ({ setIsLoggedIn }) => {
             );
         }
 
+          const defaultProfilePic =
+                    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23a0aec0'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+
+
         switch (activeTab) {
             case 'verification':
                 return (
@@ -220,11 +222,11 @@ const AdminHome = ({ setIsLoggedIn }) => {
                                 {pendingDrivers.map(driver => (
                                     <li key={driver.id} className="bg-gray-50 dark:bg-gray-700 p-6 rounded-xl shadow-sm flex flex-col md:flex-row items-center justify-between">
                                         <div className="flex items-center gap-4 mb-4 md:mb-0">
-                                            <img src={driver.profilePic} alt={driver.name} className="w-16 h-16 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600" />
+                                            <img src={defaultProfilePic} alt={driver.name} className="w-16 h-16 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600" />
                                             <div className="text-gray-800 dark:text-gray-200">
                                                 <p className="text-lg font-semibold">{driver.name}</p>
                                                 <p className="text-sm text-gray-600 dark:text-gray-400">{driver.email}</p>
-                                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">License: {driver.licenseNumber}</p>
+                                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">License: {driver.license}</p>
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
@@ -259,7 +261,7 @@ const AdminHome = ({ setIsLoggedIn }) => {
                                             <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 rounded-tl-lg">Name</th>
                                             <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Email</th>
                                             <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Status</th>
-                                            <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 rounded-tr-lg">Car No.</th>
+                                            <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 rounded-tr-lg">license No.</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -275,7 +277,7 @@ const AdminHome = ({ setIsLoggedIn }) => {
                                                         {user.status}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3 text-gray-600 dark:text-gray-400 text-sm">{user.carNo || 'N/A'}</td>
+                                                <td className="px-4 py-3 text-gray-600 dark:text-gray-400 text-sm">{user.license}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -292,8 +294,8 @@ const AdminHome = ({ setIsLoggedIn }) => {
                                         <tr className="bg-gray-100 dark:bg-gray-700">
                                             <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 rounded-tl-lg">Name</th>
                                             <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Email</th>
-                                            <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Phone</th>
-                                            <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 rounded-tr-lg">Age</th>
+                                            <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Gender</th>
+                                            <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 rounded-tr-lg">DOB</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -301,8 +303,8 @@ const AdminHome = ({ setIsLoggedIn }) => {
                                             <tr key={user.id} className="border-b border-gray-200 dark:border-gray-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                                 <td className="px-4 py-3 text-gray-800 dark:text-gray-200 text-sm font-medium">{user.name}</td>
                                                 <td className="px-4 py-3 text-gray-800 dark:text-gray-200 text-sm">{user.email}</td>
-                                                <td className="px-4 py-3 text-gray-600 dark:text-gray-400 text-sm">{user.phone || 'N/A'}</td>
-                                                <td className="px-4 py-3 text-gray-600 dark:text-gray-400 text-sm">{user.age || 'N/A'}</td>
+                                                <td className="px-4 py-3 text-gray-600 dark:text-gray-400 text-sm">{user.gender || 'N/A'}</td>
+                                                <td className="px-4 py-3 text-gray-600 dark:text-gray-400 text-sm">{user.dob || 'N/A'}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -321,7 +323,7 @@ const AdminHome = ({ setIsLoggedIn }) => {
                                     <tr className="bg-gray-100 dark:bg-gray-700">
                                         <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 rounded-tl-xl">Ride ID</th>
                                         <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Driver</th>
-                                        <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Passenger</th>
+                                        <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Passengers</th>
                                         <th className="px-4 py-2 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Route</th>
                                     </tr>
                                 </thead>
@@ -360,10 +362,9 @@ const AdminHome = ({ setIsLoggedIn }) => {
                         <div className="space-y-3 text-gray-800 dark:text-gray-200">
                             <p><strong>ID:</strong> {driverToVerify.id}</p>
                             <p><strong>Email:</strong> {driverToVerify.email}</p>
-                            <p><strong>Age:</strong> {driverToVerify.age || 'N/A'}</p>
-                            <p><strong>Phone:</strong> {driverToVerify.phone || 'N/A'}</p>
-                            <p><strong>License Number:</strong> {driverToVerify.licenseNumber || 'N/A'}</p>
-                            <p><strong>Car Model:</strong> {driverToVerify.carModel || 'N/A'} ({driverToVerify.carNo || 'N/A'})</p>
+                            <p><strong>Age:</strong> {new Date().getFullYear() - new Date(driverToVerify.dob).getFullYear()}</p>
+                            <p><strong>Gender:</strong> {driverToVerify.gender}</p>
+                            <p><strong>License Number:</strong> {driverToVerify.license}</p>
                         </div>
                         <div className="flex justify-center gap-4 mt-6">
                             <button
@@ -514,24 +515,22 @@ const AdminApp = () => {
                                 id="email-address"
                                 name="email"
                                 type="email"
-                                autoComplete="email"
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="relative block w-full px-3 py-3 border-b-2 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-t-xl focus:outline-none focus:ring-[#04007f] focus:border-[#04007f] focus:z-10 sm:text-sm bg-transparent mb-3"
-                                placeholder="Email address (admin@gmail.com)"
+                                placeholder="Email address"
                                 disabled={loading}
                             />
                             <input
                                 id="password"
                                 name="password"
                                 type="password"
-                                autoComplete="current-password"
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="relative block w-full px-3 py-3 border-b-2 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-b-xl focus:outline-none focus:ring-[#04007f] focus:border-[#04007f] focus:z-10 sm:text-sm bg-transparent"
-                                placeholder="Password (password123)"
+                                placeholder="Password"
                                 disabled={loading}
                             />
                         </div>

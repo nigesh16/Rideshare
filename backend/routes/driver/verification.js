@@ -26,7 +26,7 @@ router.post("/check-email", async (req, res) => {
       from: process.env.EMAIL_USER,
       to: email,
       subject: "OTP Verification",
-      text: `Hi ${name}, your OTP is ${otp}`
+      text: `Hi ${name}, your RideShare OTP is ${otp}. Do not share this code with anyone for your account’s safety.`
     });
 
     await Otp.deleteMany({ email });

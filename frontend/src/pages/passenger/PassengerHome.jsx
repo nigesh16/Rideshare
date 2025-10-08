@@ -309,13 +309,23 @@ const [messageText, setMessageText] = useState("");
     setMessageText("");
   };
 // -------------------- Handle Chat Select -------------------- 
-    const handleChatSelect = (chat) =>
-      { 
-        setChatToView(chat); // Reset unread when opening a chat
-        setIsMenuOpen(false); 
-        setChats((prevChats) => prevChats.map((c) => 
-          c.driver._id === chat.driver._id ? { ...c,  unreadCount: 0  } : c ) ); 
-      };
+    const handleChatSelect = async (chat) => {
+  try {
+    // Fetch the full chat with all messages
+    const res = await axios.get(`http://localhost:3000/chat/${chat._id}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("passengerToken")}` },
+    });
+    setChatToView(res.data); // full chat messages
+    setChats(prevChats =>
+      prevChats.map(c =>
+        c._id === chat._id ? { ...c, unreadCount: 0 } : c
+      )
+    );
+    setIsMenuOpen(false);
+  } catch (err) {
+    console.error("Failed to fetch chat:", err);
+  }
+};
 //-----------------------------------------------------------
 
 //------------------This All for inside messages-------------
@@ -350,7 +360,7 @@ const [messageText, setMessageText] = useState("");
       if (!chatToView?._id) return; // safety check
 
       try {
-        const res = await fetch(`http://localhost:3000/chat/${chatToView._id}`, {
+        const res = await fetch(`http://localhost:3000/chat/delete/${chatToView._id}`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
@@ -856,7 +866,7 @@ const [messageText, setMessageText] = useState("");
                         </span>
                         <span>|</span>
                         <span className="font-bold text-[#04007f] dark:text-[#2fff75]">
-                          ₹{fare.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                          ₹{ride.fare.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                         </span>
                       </div>
                     </div>
@@ -1195,11 +1205,11 @@ const [messageText, setMessageText] = useState("");
         <div className="flex flex-col md:flex-row justify-center items-center gap-4">
           <div className="flex items-center space-x-2">
             <i className="fas fa-envelope text-[#04007f] dark:text-[#2fff75]"></i>
-            <span className="text-lg font-medium">Email: constackrideshare@gmail.com</span>
+            <span className="text-lg font-medium">Email: contact.rideshare.app@gmail.com</span>
           </div>
           <div className="flex items-center space-x-2">
             <i className="fas fa-phone-alt text-[#04007f] dark:text-[#2fff75]"></i>
-            <span className="text-lg font-medium">Phone: 3453427529</span>
+            <span className="text-lg font-medium">Phone: 9876543210</span>
             <ToastContainer position="top-center" autoClose={2000} hideProgressBar toastStyle={{width: "350px"}}/>
           </div>
         </div>

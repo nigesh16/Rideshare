@@ -13,7 +13,9 @@ const RideSchema = new mongoose.Schema({
       bookedAt: { type: Date },
       rejectedAt: { type: Date },
       canceledAt: {type: Date},
-    }
+      review: { type: String }, 
+      rating: { type: Number, min: 1, max: 5 }
+    } 
   ],
   from: { type: String, required: true },
   to: { type: String, required: true },

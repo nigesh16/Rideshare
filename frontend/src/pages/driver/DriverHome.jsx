@@ -415,11 +415,25 @@ const DriverHome = () => {
       setMessageText("");
     };
 // -------------------- Handle Chat Select -------------------- 
-    const handleChatSelect = (chat) =>
-      { setChatToView(chat); // Reset unread when opening a chat 
-        setChats((prevChats) => prevChats.map((c) => 
-          c.passenger._id === chat.passenger._id ? { ...c, unreadCount: 0  } : c ) ); 
-      };
+    const handleChatSelect = async (chat) => {
+  try {
+    // Fetch full chat from backend
+    const res = await axios.get(`http://localhost:3000/chat/${chat._id}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("driverToken")}` },
+    });
+
+    setChatToView(res.data); // set full chat with messages
+    setChats(prevChats =>
+      prevChats.map(c =>
+        c._id === chat._id ? { ...c, unreadCount: 0 } : c
+      )
+    );
+    setIsMenuOpen(false);
+  } catch (err) {
+    console.error("Failed to fetch chat:", err);
+  }
+};
+
 //---------------------------------------------------------
 
 //------------------ This All for messages -----------------
@@ -455,7 +469,7 @@ const DriverHome = () => {
         if (!chatToView?._id) return; // safety check
 
         try {
-          const res = await fetch(`http://localhost:3000/chat/${chatToView._id}`, {
+          const res = await fetch(`http://localhost:3000/chat/delete/${chatToView._id}`, {
             method: "DELETE",
             headers: {
               "Content-Type": "application/json",
@@ -850,7 +864,7 @@ const DriverHome = () => {
                       <div className="text-gray-600 dark:text-gray-400 text-sm mt-2 md:mt-0">
                         {new Date(ride.date).toLocaleDateString()} |{" "}
                         <span className="font-bold text-[#04007f] dark:text-[#2fff75]">
-                          ₹{ride.fare}
+                          ₹{ride.fare * (ride.totalSeats - ride.availableSeats)} 
                         </span>
                       </div>
                     </li>
@@ -1169,11 +1183,11 @@ const DriverHome = () => {
           <div className="flex flex-col md:flex-row justify-center items-center gap-4">
             <div className="flex items-center space-x-2">
               <EnvelopeIcon className="w-6 h-6 text-[#04007f] dark:text-[#2fff75]" />
-              <span className="text-lg font-medium">Email: constackrideshare@gmail.com</span>
+              <span className="text-lg font-medium">Email: contact.rideshare.app@gmail.com</span>
             </div>
             <div className="flex items-center space-x-2">
               <PhoneIcon className="w-6 h-6 text-[#04007f] dark:text-[#2fff75]" />
-              <span className="text-lg font-medium">Phone: 3453427529</span>
+              <span className="text-lg font-medium">Phone: 9876543210</span>
               <ToastContainer position="top-center" autoClose={2000} hideProgressBar toastStyle={{width: "350px"}}/>
             </div>
           </div>

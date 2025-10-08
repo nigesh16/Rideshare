@@ -13,10 +13,10 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
     const ADMIN_EMAIL = "admin@gmail.com";
-    const ADMIN_PASSWORD = "password123";
+    const ADMIN_PASSWORD = "admin123";
 
     if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      const token = jwt.sign({ role: "admin" }, process.env.JWT_SECRET, { expiresIn: "7d" });
+      const token = jwt.sign({ role: "admin" }, process.env.JWT_SECRET, { expiresIn: "1h" });
       return res.json({ success: true, token });
     }
 

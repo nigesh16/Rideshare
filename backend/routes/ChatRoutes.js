@@ -174,7 +174,7 @@ router.get("/", verifyUser, async (req, res) => {
 });
 
 // -------------------- DELETE messages --------------------
-router.delete("/:chatId", verifyUser, async (req, res) => {
+router.delete("/delete/:chatId", verifyUser, async (req, res) => {
   const { id, role } = req.user;
   const { chatId } = req.params;
 
@@ -208,5 +208,45 @@ router.delete("/:chatId", verifyUser, async (req, res) => {
       .json({ success: false, message: "Server error", error: err.message });
   }
 });
+
+router.get("/:chatId", verifyUser, async (req, res) => {
+  const { id, role } = req.user; // logged-in user
+  const { chatId } = req.params;
+
+  try {
+    const chat = await Chat.findById(chatId)
+      .populate("driverId", "name profilePicture")
+      .populate("passengerId", "name profilePicture")
+      .lean();
+
+    if (!chat) return res.status(404).json({ success: false, message: "Chat not found" });
+
+    // ✅ Check authorization
+    if (
+      (role === "driver" && chat.driverId?._id.toString() !== id) ||
+      (role === "passenger" && chat.passengerId?._id.toString() !== id)
+    ) {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    res.json({
+      _id: chat._id,
+      driver: chat.driverId || {},
+      passenger: chat.passengerId || {},
+      messages: chat.messages.map(m => ({
+        text: m.text,
+        time: m.time,
+        sender: m.sender,
+        senderId: m.senderId || null,
+      })),
+      lastMessage: chat.messages?.[chat.messages.length - 1]?.text || "",
+      lastMessageTime: chat.messages?.[chat.messages.length - 1]?.time || "",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 
 module.exports = router;

@@ -40,3 +40,4 @@ coverage/
 # Temporary
 temp/
 tmp/
+".env"    # ensure .env is ignored going forward

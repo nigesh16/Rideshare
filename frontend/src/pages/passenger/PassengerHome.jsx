@@ -45,7 +45,7 @@ const PassengerHome = () => {
           }
 
           // Call backend to verify token and get userId
-          axios.get("http://localhost:3000/p/user-info", {
+          axios.get(`${process.env.REACT_APP_API_URL}/p/user-info`, {
             headers: { Authorization: `Bearer ${token}` }
           })
           .then(res => {
@@ -65,7 +65,7 @@ const PassengerHome = () => {
         useEffect(() => {
           const fetchRides = async () => {
             try {
-              const res = await axios.get("http://localhost:3000/p/available");
+              const res = await axios.get(`${process.env.REACT_APP_API_URL}/p/available`);
               if (res.data.success) {
                 setUpcomingRides(res.data.rides);
               }
@@ -83,7 +83,7 @@ const PassengerHome = () => {
         const fetchBookedRides = async () => {
           try {
             const token = localStorage.getItem("passengerToken");
-            const res = await axios.get("http://localhost:3000/p/bookedrides", {
+            const res = await axios.get(`${process.env.REACT_APP_API_URL}/p/bookedrides`, {
               headers: { Authorization: `Bearer ${token}` },
             });
 
@@ -104,7 +104,7 @@ const PassengerHome = () => {
           const fetchRideHistory = async () => {
             try {
               const token = localStorage.getItem("passengerToken");
-              const res = await axios.get("http://localhost:3000/p/ride-history", {
+              const res = await axios.get(`${process.env.REACT_APP_API_URL}/p/ride-history`, {
                 headers: { Authorization: `Bearer ${token}` },
               });
               if (res.data.success) {
@@ -208,7 +208,7 @@ const PassengerHome = () => {
     const token = localStorage.getItem("passengerToken");
     if (!token) return;
 
-    const newSocket = io("http://localhost:3000", {
+    const newSocket = io(`${process.env.REACT_APP_API_URL}`, {
       auth: { token },
       transports: ["websocket", "polling"],
     });

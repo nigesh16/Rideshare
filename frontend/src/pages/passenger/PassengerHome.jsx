@@ -239,7 +239,7 @@ const [messageText, setMessageText] = useState("");
   useEffect(() => {
     const fetchChats = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/chat", {
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/chat`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("passengerToken")}` },
         });
         const chatsWithUnread = res.data.map((c) => ({ ...c, unread: false }));
@@ -312,7 +312,7 @@ const [messageText, setMessageText] = useState("");
     const handleChatSelect = async (chat) => {
   try {
     // Fetch the full chat with all messages
-    const res = await axios.get(`http://localhost:3000/chat/${chat._id}`, {
+    const res = await axios.get(`${process.env.REACT_APP_API_URL}/chat/${chat._id}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("passengerToken")}` },
     });
     setChatToView(res.data); // full chat messages
@@ -360,7 +360,7 @@ const [messageText, setMessageText] = useState("");
       if (!chatToView?._id) return; // safety check
 
       try {
-        const res = await fetch(`http://localhost:3000/chat/delete/${chatToView._id}`, {
+        const res = await fetch(`${process.env.REACT_APP_API_URL}/chat/delete/${chatToView._id}`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",

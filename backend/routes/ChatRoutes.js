@@ -1,7 +1,7 @@
 const express = require("express");
 const Chat = require("../models/ChatModel");
 const Driver = require("../models/DriverModel");
-const Passenger = require("../models/PassengerModel");
+const Passenger = require("../models/passengerModel");
 const verifyUser = require("./middleware/verifyUser"); // works for both roles
 const Booking = require("../models/RideModel");
 

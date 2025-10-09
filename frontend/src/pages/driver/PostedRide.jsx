@@ -78,7 +78,7 @@ const PostedRide = () => {
     try {
       const token = localStorage.getItem("driverToken");
       const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/d/cancel',
+        `${process.env.REACT_APP_API_URL}/d/cancel`,
         { rideId: rideState._id },
         { headers: { Authorization: `Bearer ${token}` } }
       );

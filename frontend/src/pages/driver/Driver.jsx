@@ -92,7 +92,7 @@ function Driver(){
 
         // ✅ All validations passed
         try{
-            const res = await axios.post("http://localhost:3000/d/check-email",{name,email: trimmedEmail});
+            const res = await axios.post(`${process.env.REACT_APP_API_URL}/d/check-email`,{name,email: trimmedEmail});
             if(res.data.success){
               if(!verification){
                 setVerification(true);
@@ -124,7 +124,7 @@ function Driver(){
         const trimmedEmail = email.trim();
         const trimmedName = name.trim();
         try{
-          const res = await axios.post("http://localhost:3000/d/verify-otp",{
+          const res = await axios.post(`${process.env.REACT_APP_API_URL}/d/verify-otp`,{
             name:trimmedName,email:trimmedEmail,password,dob,gender,license,otp: Number(otp)
           })
           if(res.data.success){
@@ -160,7 +160,7 @@ function Driver(){
         }
         //verification
         try{
-            const res = await axios.post("http://localhost:3000/d/login",{
+            const res = await axios.post(`${process.env.REACT_APP_API_URL}/d/login`,{
             email:trimmedEmail,password:loginPassword})
             if(!res.data.success){
               if(res.data.message === "Admin verification in process"){

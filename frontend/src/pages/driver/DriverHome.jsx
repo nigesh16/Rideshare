@@ -52,7 +52,7 @@ const DriverHome = () => {
           }
       
           // Call backend to verify token and get userId
-          axios.get(`${process.env.REACT_APP_API_URL}/d/user-info', {
+          axios.get(`${process.env.REACT_APP_API_URL}/d/user-info`, {
             headers: { Authorization: `Bearer ${token}` }
           })
           .then(res => {
@@ -71,7 +71,7 @@ const DriverHome = () => {
       const fetchDriverRides = async () => {
           try {
             const token = localStorage.getItem("driverToken");
-            const res = await axios.get(`${process.env.REACT_APP_API_URL}/d/posted-rides', {
+            const res = await axios.get(`${process.env.REACT_APP_API_URL}/d/posted-rides`, {
               headers: { Authorization: `Bearer ${token}` },
             });
 
@@ -167,7 +167,7 @@ const DriverHome = () => {
               distanceKm: calculatedDistance,
               fare: calculatedFare,        
             };
-            const res = await axios.post(`${process.env.REACT_APP_API_URL}/d/post-ride', postData, {
+            const res = await axios.post(`${process.env.REACT_APP_API_URL}/d/post-ride`, postData, {
               headers: { Authorization: `Bearer ${token}` },
             });
 
@@ -198,7 +198,7 @@ const DriverHome = () => {
         const fetchRideHistory = async () => {
           try {
             const token = localStorage.getItem("driverToken");
-            const res = await fetch(`${process.env.REACT_APP_API_URL}/d/ride-history', {
+            const res = await fetch(`${process.env.REACT_APP_API_URL}/d/ride-history`, {
               headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();

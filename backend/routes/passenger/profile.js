@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Passenger = require("../../models/PassengerModel");
+const Passenger = require("../../models/passengerModel");
 const verifyPassenger = require("../middleware/verifyPassenger");
 const multer = require("multer");
 

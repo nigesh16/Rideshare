@@ -1,6 +1,6 @@
 const express = require('express');
 const Otp = require('../../models/P-otpVerification');
-const User = require('../../models/PassengerModel');
+const User = require('../../models/passengerModel');
 const nodemailer = require("nodemailer");
 const jwt = require('jsonwebtoken');
 

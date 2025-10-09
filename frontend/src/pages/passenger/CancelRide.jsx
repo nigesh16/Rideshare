@@ -30,7 +30,7 @@ const CancelRide = () => {
     try {
       const token = localStorage.getItem("passengerToken");
       await axios.post(
-        "http://localhost:3000/p/cancel",
+        `${process.env.REACT_APP_API_URL}/p/cancel`,
         { rideId: ride._id, bookingId: myBooking._id },
         { headers: { Authorization: `Bearer ${token}` } }
       );

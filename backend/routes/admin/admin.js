@@ -1,7 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const Drivers = require('../../models/DriverModel');
-const Passengers = require("../../models/PassengerModel");
+const Passengers = require("../../models/passengerModel");
 const Rides = require("../../models/RideModel");
 const jwt = require("jsonwebtoken");
 

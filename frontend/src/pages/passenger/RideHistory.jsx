@@ -26,7 +26,7 @@ const RideHistory = () => {
       const token = localStorage.getItem("passengerToken");
 
     const res = await axios.post(
-      `http://localhost:3000/p/rides/${ride._id}/review/${passengerId}`,
+      `${process.env.REACT_APP_API_URL}/p/rides/${ride._id}/review/${passengerId}`,
       { review, rating },
       {
         headers: {

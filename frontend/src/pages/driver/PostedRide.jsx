@@ -21,7 +21,7 @@ const PostedRide = () => {
     if (!ride?._id) return;
     try {
       const token = localStorage.getItem("driverToken");
-      const res = await axios.get(`${process.env.REACT_APP_API_URL}/d/posted-ride/${ride._id}`, {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/d/posted-ride/${ride._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data.success) setRideState(res.data.ride);
@@ -58,7 +58,7 @@ const PostedRide = () => {
     try {
       const token = localStorage.getItem("driverToken");
       const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/p/respond`,
+        `${import.meta.env.VITE_API_URL}/p/respond`,
         { rideId: rideState._id, passengerId, action },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -78,7 +78,7 @@ const PostedRide = () => {
     try {
       const token = localStorage.getItem("driverToken");
       const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/d/cancel`,
+        `${import.meta.env.VITE_API_URL}/d/cancel`,
         { rideId: rideState._id },
         { headers: { Authorization: `Bearer ${token}` } }
       );

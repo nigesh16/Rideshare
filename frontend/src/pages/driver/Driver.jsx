@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from './Driver.module.css';
 import Countdown from "../../countdown/Countdown";
 import { useNavigate } from "react-router-dom";
@@ -22,6 +22,8 @@ function Driver(){
     const [verification,setVerification] = useState(false);
 
     const [isSignInActive, setIsSignInActive] = useState(false);
+
+    
 
     function handleToggle(isActive) {
       setIsSignInActive(isActive);
@@ -92,7 +94,7 @@ function Driver(){
 
         // ✅ All validations passed
         try{
-            const res = await axios.post(`${process.env.REACT_APP_API_URL}/d/check-email`,{name,email: trimmedEmail});
+            const res = await axios.post(`${import.meta.env.VITE_API_URL}/d/check-email`,{name,email: trimmedEmail});
             if(res.data.success){
               if(!verification){
                 setVerification(true);
@@ -124,7 +126,7 @@ function Driver(){
         const trimmedEmail = email.trim();
         const trimmedName = name.trim();
         try{
-          const res = await axios.post(`${process.env.REACT_APP_API_URL}/d/verify-otp`,{
+          const res = await axios.post(`${import.meta.env.VITE_API_URL}/d/verify-otp`,{
             name:trimmedName,email:trimmedEmail,password,dob,gender,license,otp: Number(otp)
           })
           if(res.data.success){
@@ -160,7 +162,7 @@ function Driver(){
         }
         //verification
         try{
-            const res = await axios.post(`${process.env.REACT_APP_API_URL}/d/login`,{
+            const res = await axios.post(`${import.meta.env.VITE_API_URL}/d/login`,{
             email:trimmedEmail,password:loginPassword})
             if(!res.data.success){
               if(res.data.message === "Admin verification in process"){

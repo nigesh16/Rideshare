@@ -42,7 +42,7 @@ const ConfirmRide = () => {
     try {
       const token = localStorage.getItem("passengerToken");
       await axios.post(
-        `${process.env.REACT_APP_API_URL}/p/request`, // ✅ correct endpoint
+        `${import.meta.env.VITE_API_URL}/p/request`, // ✅ correct endpoint
         {
           rideId: ride._id,
           seatsRequested, // ✅ matches backend

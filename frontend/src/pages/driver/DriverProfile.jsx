@@ -4,7 +4,7 @@ import axios from "axios";
 
 // axios base URL
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL, // backend URL
+  baseURL: import.meta.env.VITE_API_URL, // backend URL
 });
 
 const DriverProfile = () => {

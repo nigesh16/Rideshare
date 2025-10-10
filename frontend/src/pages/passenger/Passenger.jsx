@@ -79,7 +79,7 @@ function Passenger(){
 
         // ✅ All validations passed
         try{
-            const res = await axios.post(`${process.env.REACT_APP_API_URL}/p/check-email`,{name,email: trimmedEmail});
+            const res = await axios.post(`${import.meta.env.VITE_API_URL}/p/check-email`,{name,email: trimmedEmail});
             if(res.data.success){
               if(!verification){
                 setVerification(true);
@@ -111,7 +111,7 @@ function Passenger(){
         const trimmedEmail = email.trim();
         const trimmedName = name.trim();
         try{
-          const res = await axios.post(`${process.env.REACT_APP_API_URL}/p/verify-otp`,{
+          const res = await axios.post(`${import.meta.env.VITE_API_URL}/p/verify-otp`,{
             name:trimmedName,email:trimmedEmail,password,dob,gender, otp: Number(otp)
           })
           if(res.data.success){
@@ -147,7 +147,7 @@ function Passenger(){
         }
         
         try {
-          const res = await axios.post(`${process.env.REACT_APP_API_URL}/p/login`, {
+          const res = await axios.post(`${import.meta.env.VITE_API_URL}/p/login`, {
             email: trimmedEmail,
             password : loginPassword,
           });

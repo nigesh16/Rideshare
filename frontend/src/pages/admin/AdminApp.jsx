@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
 // --- CONFIGURATION ---
-const API_BASE_URL = `${process.env.REACT_APP_API_URL}/admin`; // Your backend port
+const API_BASE_URL = `${import.meta.env.VITE_API_URL}/admin`; // Your backend port
 
 // --- ICON COMPONENTS (Inline SVG) ---
 const UserIcon = (props) => (

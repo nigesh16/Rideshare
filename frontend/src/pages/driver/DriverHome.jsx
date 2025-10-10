@@ -52,7 +52,7 @@ const DriverHome = () => {
           }
       
           // Call backend to verify token and get userId
-          axios.get(`${process.env.REACT_APP_API_URL}/d/user-info`, {
+          axios.get(`${import.meta.env.VITE_API_URL}/d/user-info`, {
             headers: { Authorization: `Bearer ${token}` }
           })
           .then(res => {
@@ -71,7 +71,7 @@ const DriverHome = () => {
       const fetchDriverRides = async () => {
           try {
             const token = localStorage.getItem("driverToken");
-            const res = await axios.get(`${process.env.REACT_APP_API_URL}/d/posted-rides`, {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/d/posted-rides`, {
               headers: { Authorization: `Bearer ${token}` },
             });
 
@@ -167,7 +167,7 @@ const DriverHome = () => {
               distanceKm: calculatedDistance,
               fare: calculatedFare,        
             };
-            const res = await axios.post(`${process.env.REACT_APP_API_URL}/d/post-ride`, postData, {
+            const res = await axios.post(`${import.meta.env.VITE_API_URL}/d/post-ride`, postData, {
               headers: { Authorization: `Bearer ${token}` },
             });
 
@@ -198,7 +198,7 @@ const DriverHome = () => {
         const fetchRideHistory = async () => {
           try {
             const token = localStorage.getItem("driverToken");
-            const res = await fetch(`${process.env.REACT_APP_API_URL}/d/ride-history`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/d/ride-history`, {
               headers: { Authorization: `Bearer ${token}` }
             });
             const data = await res.json();
@@ -283,7 +283,7 @@ const DriverHome = () => {
       const token = localStorage.getItem("driverToken");
       if (!token) return;
 
-      const newSocket = io(`${process.env.REACT_APP_API_URL}`, {
+      const newSocket = io(`${import.meta.env.VITE_API_URL}`, {
         auth: { token },
         transports: ["websocket", "polling"],
       });
@@ -318,7 +318,7 @@ const DriverHome = () => {
     useEffect(() => {
       const fetchChats = async () => {
         try {
-          const res = await axios.get(`${process.env.REACT_APP_API_URL}/chat`, {
+          const res = await axios.get(`${import.meta.env.VITE_API_URL}/chat`, {
             headers: { Authorization: `Bearer ${localStorage.getItem("driverToken")}` },
           });
           // add unread false by default
@@ -418,7 +418,7 @@ const DriverHome = () => {
     const handleChatSelect = async (chat) => {
   try {
     // Fetch full chat from backend
-    const res = await axios.get(`${process.env.REACT_APP_API_URL}/chat/${chat._id}`, {
+    const res = await axios.get(`${import.meta.env.VITE_API_URL}/chat/${chat._id}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("driverToken")}` },
     });
 
@@ -469,7 +469,7 @@ const DriverHome = () => {
         if (!chatToView?._id) return; // safety check
 
         try {
-          const res = await fetch(`${process.env.REACT_APP_API_URL}/chat/delete/${chatToView._id}`, {
+          const res = await fetch(`${import.meta.env.VITE_API_URL}/chat/delete/${chatToView._id}`, {
             method: "DELETE",
             headers: {
               "Content-Type": "application/json",

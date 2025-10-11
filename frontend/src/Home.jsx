@@ -154,11 +154,11 @@ function Home() {
         <div className="flex flex-col md:flex-row justify-center items-center gap-4">
           <div className="flex items-center space-x-2">
             <i className="fas fa-envelope text-indigo-900 dark:text-teal-400"></i>
-            <a href="mailto:rideshare@gmail.com" className="text-lg font-medium hover:underline">Email: rideshare@gmail.com</a>
+            <a href="mailto:rideshare@gmail.com" className="text-lg font-medium hover:underline">Email: contact.rideshare.app@gmail.com</a>
           </div>
           <div className="flex items-center space-x-2">
             <i className="fas fa-phone-alt text-indigo-900 dark:text-teal-400"></i>
-            <a href="tel:3784972692" className="text-lg font-medium hover:underline">Phone: 3784972692</a>
+            <a href="tel:3784972692" className="text-lg font-medium hover:underline">Phone: 9876543210</a>
           </div>
         </div>
       </div>

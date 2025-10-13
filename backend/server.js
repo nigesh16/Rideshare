@@ -25,11 +25,13 @@ const server = http.createServer(app);
 initSocket(server);
 
 server.listen(process.env.PORT, () => {
+  console.log("EMAIL_USER:", process.env.EMAIL_USER);
+  console.log("EMAIL_PASS :", process.env.EMAIL_PASS); // don't print actual password
+  console.log("JWT_SECRET:", process.env.JWT_SECRET);
+  console.log("MONGO_URI :", process.env.MONGO_URI);
+  console.log("PORT:", process.env.PORT);
+    
   console.log(`🚀 Server running on port ${process.env.PORT}`);
 });
 
-console.log("EMAIL_USER:", process.env.EMAIL_USER);
-console.log("EMAIL_PASS :", process.env.EMAIL_PASS); // don't print actual password
-console.log("JWT_SECRET:", process.env.JWT_SECRET);
-console.log("MONGO_URI :", process.env.MONGO_URI);
-console.log("PORT:", process.env.PORT);
+

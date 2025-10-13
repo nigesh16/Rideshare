@@ -27,3 +27,9 @@ initSocket(server);
 server.listen(process.env.PORT, () => {
   console.log(`🚀 Server running on port ${process.env.PORT}`);
 });
+
+console.log("EMAIL_USER:", process.env.EMAIL_USER);
+console.log("EMAIL_PASS exists?", !!process.env.EMAIL_PASS); // don't print actual password
+console.log("JWT_SECRET:", process.env.JWT_SECRET ? "Exists" : "Missing");
+console.log("MONGO_URI exists?", !!process.env.MONGO_URI);
+console.log("PORT:", process.env.PORT);

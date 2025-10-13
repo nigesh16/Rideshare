@@ -39,7 +39,9 @@ router.post("/check-email", async (req, res) => {
 
     return res.json({ success: true });
   } catch (err) {
-    console.error("SendMail error:", err);
+    console.error("SendMail error:", err);      // full error object
+    console.error("Error message:", err.message); // just the message
+    console.error("Error stack:", err.stack);
     return res.json({ success: false, message: "Server busy - sending OTP email" });
   }
 });

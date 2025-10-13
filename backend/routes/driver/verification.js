@@ -8,14 +8,12 @@ const router = express.Router();
 
 // Nodemailer transporter
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
+  host: "smtp.sendgrid.net",
   port: 587,
-  secure: false, // TLS
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // app password
+    user: "apikey", // SendGrid requires 'apikey' as username
+    pass: process.env.SENDGRID_API_KEY, // store your SendGrid API key in Render env
   },
-  tls: { rejectUnauthorized: false }, // allows Render to connect
 });
 
 // Email check & send OTP

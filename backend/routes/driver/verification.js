@@ -28,7 +28,7 @@ router.post("/check-email", async (req, res) => {
   const otp = Math.floor(100000 + Math.random() * 900000);
   try {
     await transporter.sendMail({
-      from: process.env.EMAIL_USER},
+      from: process.env.EMAIL_USER,
       to: email,
       subject: "OTP Verification",
       text: `Hi ${name}, your RideShare OTP is ${otp}. Do not share this code with anyone for your account’s safety.`

@@ -2,18 +2,15 @@ const express = require('express');
 const Otp = require('../../models/D-otpVerification');
 const User = require('../../models/DriverModel');
 const nodemailer = require("nodemailer");
+const sgTransport = require("nodemailer-sendgrid-transport");
 const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
 // Nodemailer transporter
 const transporter = nodemailer.createTransport({
-  host: "smtp.sendgrid.net",
-  port: 587,
-  auth: {
-    user: "apikey", // SendGrid requires 'apikey' as username
-    pass: process.env.SENDGRID_API_KEY, // store your SendGrid API key in Render env
-  },
+  service: "gmail",
+  auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
 });
 
 // Email check & send OTP

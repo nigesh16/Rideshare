@@ -2,7 +2,6 @@ const express = require('express');
 const Otp = require('../../models/D-otpVerification');
 const User = require('../../models/DriverModel');
 const nodemailer = require("nodemailer");
-const sgTransport = require("nodemailer-sendgrid-transport");
 const jwt = require('jsonwebtoken');
 
 const router = express.Router();

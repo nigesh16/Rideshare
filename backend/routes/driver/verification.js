@@ -1,21 +1,12 @@
 const express = require('express');
 const Otp = require('../../models/D-otpVerification');
 const User = require('../../models/DriverModel');
-const nodemailer = require("nodemailer");
+const sgMail = require('@sendgrid/mail');
 const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
-// Nodemailer transporter
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS, // App password
-  },
-});
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Email check & send OTP
 router.post("/check-email", async (req, res) => {
@@ -27,12 +18,14 @@ router.post("/check-email", async (req, res) => {
 
   const otp = Math.floor(100000 + Math.random() * 900000);
   try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+    const msg = {
       to: email,
+      from: process.env.EMAIL_USER, // Must be a verified sender in SendGrid
       subject: "OTP Verification",
-      text: `Hi ${name}, your RideShare OTP is ${otp}. Do not share this code with anyone for your account’s safety.`
-    });
+      text: `Hi ${name}, your RideShare OTP is ${otp}. Do not share this code with anyone for your account’s safety.`,
+    };
+
+    await sgMail.send(msg);
 
     await Otp.deleteMany({ email });
     await new Otp({ email, otp }).save();

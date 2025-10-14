@@ -8,10 +8,13 @@ const jwt = require('jsonwebtoken');
 const router = express.Router();
 
 // Nodemailer transporter
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
-});
+const transporter = nodemailer.createTransport(
+  sgTransport({
+    auth: {
+      api_key: process.env.SENDGRID_API_KEY,
+    },
+  })
+);
 
 // Email check & send OTP
 router.post("/check-email", async (req, res) => {

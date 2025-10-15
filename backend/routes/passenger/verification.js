@@ -1,19 +1,13 @@
 const express = require('express');
 const Otp = require('../../models/P-otpVerification');
 const User = require('../../models/passengerModel');
-const nodemailer = require("nodemailer");
-const sgTransport = require("nodemailer-sendgrid-transport");
 const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
-// Nodemailer transporter
-const transporter = nodemailer.createTransport(
-  sgTransport({
-    auth: {
-      api_key: process.env.SENDGRID_API_KEY,
-    },
-  })
+const mailjet = require('node-mailjet').apiConnect(
+  process.env.MJ_APIKEY_PUBLIC,
+  process.env.MJ_APIKEY_PRIVATE
 );
 
 // Email check & send OTP
@@ -25,11 +19,18 @@ router.post("/check-email", async (req, res) => {
 
   const otp = Math.floor(100000 + Math.random() * 900000);
   try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "OTP Verification",
-      text: `Hi ${name}, your RideShare OTP is ${otp}. Do not share this code with anyone for your account’s safety.`
+    await mailjet.post("send", { version: "v3.1" }).request({
+      Messages: [
+        {
+          From: {
+            Email: process.env.EMAIL_USER,
+            Name: "RideShare Team",
+          },
+          To: [{ Email: email }],
+          Subject: "OTP Verification",
+          TextPart: `Hi ${name}, your RideShare OTP is ${otp}. Do not share this code with anyone for your account’s safety.`,
+        },
+      ],
     });
 
     await Otp.deleteMany({ email });

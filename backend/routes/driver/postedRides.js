@@ -11,7 +11,7 @@ router.get("/posted-rides", verifyDriver, async (req, res) => {
     // Only fetch rides with status "available" or "unavailable"
     const rides = await Ride.find({
       driverId,
-      status: { $in: ["available", "unavailable", "canceled"] },
+      status: { $in: ["available", "canceled"] },
     })
       .populate("passengers.passengerId", "name email dob profilePicture") // include passenger info
       .sort({ date: -1 });
